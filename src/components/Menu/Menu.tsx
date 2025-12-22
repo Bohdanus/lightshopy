@@ -2,11 +2,16 @@ import './Menu.scss';
 import DesktopHeader from "../DesktopHeader/DesktopHeader.tsx";
 import MobileMenu from "../MobileMenu/MobileMenu.tsx";
 
-const Menu = () => {
+interface MenuProps {
+  onOpenClick: () => void;
+  onSaveClick: () => void;
+}
+
+const Menu = ({ onOpenClick, onSaveClick }: MenuProps) => {
   return (
     <>
-      <DesktopHeader />
-      <MobileMenu />
+      <DesktopHeader onOpenClick={onOpenClick} onSaveClick={onSaveClick} />
+      <MobileMenu onOpenClick={onOpenClick} onSaveClick={onSaveClick} />
     </>
   );
 };

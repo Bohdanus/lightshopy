@@ -2,10 +2,18 @@ import { useState, useEffect, useRef } from 'react';
 import { Offcanvas } from 'bootstrap';
 
 import './MobileMenu.scss';
-import AppMenu from '../AppMenu/AppMenu';
+import { useImage } from '../../contexts/ImageContext.tsx';
+import { applyGrayscale } from '../../tools/grayscale.ts';
+import { applyBlur } from '../../tools/blur.ts';
 
 
-const MobileMenu = () => {
+interface MobileMenuProps {
+    onOpenClick: () => void;
+    onSaveClick: () => void;
+}
+
+const MobileMenu = ({ onOpenClick, onSaveClick }: MobileMenuProps) => {
+    const { image, setImage } = useImage();
     const [isOpen, setIsOpen] = useState(false);
     const offcanvasRef = useRef<HTMLDivElement>(null);
     const bsOffcanvas = useRef<Offcanvas | null>(null);
@@ -30,6 +38,42 @@ const MobileMenu = () => {
     const toggleMenu = () => {
         bsOffcanvas.current?.toggle();
     };
+
+    const handleGrayscale = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (!image) return;
+
+        try {
+            const newImg = await applyGrayscale(image);
+            setImage(newImg);
+            bsOffcanvas.current?.hide();
+        } catch (error) {
+            console.error('Failed to apply grayscale:', error);
+        }
+    };
+
+    const handleBlur = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (!image) return;
+
+        try {
+            const newImg = await applyBlur(image);
+            setImage(newImg);
+            bsOffcanvas.current?.hide();
+        } catch (error) {
+            console.error('Failed to apply blur:', error);
+        }
+    };
+
+    const handleOpenClick = () => {
+        bsOffcanvas.current?.hide();
+        onOpenClick();
+    }
+
+    const handleSaveClick = () => {
+        bsOffcanvas.current?.hide();
+        onSaveClick();
+    }
 
     return (
         <>
@@ -59,14 +103,54 @@ const MobileMenu = () => {
                 </div>
                 <div className="offcanvas-body p-0">
                     <div className="mobile-menu-container">
-                        <AppMenu isMobile={true} />
+                        <div className="accordion accordion-flush" id="menuAccordion">
+                            <div className="accordion-item bg-transparent">
+                                <h2 className="accordion-header" id="headingFile">
+                                    <button className="accordion-button collapsed bg-transparent" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFile" aria-expanded="false" aria-controls="collapseFile">
+                                        File
+                                    </button>
+                                </h2>
+                                <div id="collapseFile" className="accordion-collapse collapse" aria-labelledby="headingFile" data-bs-parent="#menuAccordion">
+                                    <div className="accordion-body p-0">
+                                        <ul className="list-group list-group-flush">
+                                            <li className="list-group-item bg-transparent border-0 ps-4"><a className="text-decoration-none text-dark d-block w-100" href="#" onClick={handleOpenClick}>Open</a></li>
+                                            <li className="list-group-item bg-transparent border-0 ps-4"><a className="text-decoration-none text-dark d-block w-100" href="#" onClick={handleSaveClick}>Save</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="accordion-item bg-transparent">
+                                <h2 className="accordion-header" id="headingEdit">
+                                    <button className="accordion-button collapsed bg-transparent" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEdit" aria-expanded="false" aria-controls="collapseEdit">
+                                        Edit
+                                    </button>
+                                </h2>
+                                <div id="collapseEdit" className="accordion-collapse collapse" aria-labelledby="headingEdit" data-bs-parent="#menuAccordion">
+                                    <div className="accordion-body p-0">
+                                        <ul className="list-group list-group-flush">
+                                            <li className="list-group-item bg-transparent border-0 ps-4"><a className="text-decoration-none text-dark d-block w-100" href="#">Levels</a></li>
+                                            <li className="list-group-item bg-transparent border-0 ps-4"><a className="text-decoration-none text-dark d-block w-100" href="#">Effects</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                     <hr />
                     <div className="px-3">
                         <h6>Left Tools</h6>
                         <ul className="nav flex-column mb-4">
-                            <li className="nav-item"><a className="nav-link" href="#">Tool 1</a></li>
-                            <li className="nav-item"><a className="nav-link" href="#">Tool 2</a></li>
+                            <li className="nav-item">
+                                <a className="nav-link" href="#" onClick={handleGrayscale}>
+                                    To Grayscale
+                                </a>
+                            </li>
+                            <li className="nav-item">
+                                <a className="nav-link" href="#" onClick={handleBlur}>
+                                    Blur
+                                </a>
+                            </li>
                         </ul>
                         <h6>Right Tools</h6>
                         <ul className="nav flex-column">
