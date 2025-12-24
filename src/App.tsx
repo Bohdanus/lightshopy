@@ -1,12 +1,11 @@
-
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import './App.scss';
 import Menu from './components/Menu/Menu';
 import Footer from './components/Footer/Footer';
 import SidebarLeft from './components/SidebarLeft/SidebarLeft';
 import SidebarRight from './components/SidebarRight/SidebarRight';
 import BottomToolbar from './components/BottomToolbar/BottomToolbar';
-import Main from "./components/Main/Main.tsx";
+import Main from './components/Main/Main.tsx';
 import { ImageProvider, useImage } from './contexts/ImageContext';
 import SaveDialog from './components/SaveDialog/SaveDialog';
 import { saveImage } from './tools/save';
@@ -29,6 +28,10 @@ function AppContent() {
     }
   };
 
+  const handleCloseSaveDialog = useCallback(() => {
+    setShowSaveDialog(false);
+  }, []);
+
   return (
     <div className="app-container">
       <Menu onOpenClick={loadImageFromDisk} onSaveClick={handleSaveClick} />
@@ -40,11 +43,7 @@ function AppContent() {
       <Footer />
       <BottomToolbar />
 
-      <SaveDialog
-        show={showSaveDialog}
-        onClose={() => setShowSaveDialog(false)}
-        onSave={handleSave}
-      />
+      <SaveDialog show={showSaveDialog} onClose={handleCloseSaveDialog} onSave={handleSave} />
     </div>
   );
 }

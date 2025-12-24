@@ -19,11 +19,11 @@ const SidebarLeft = () => {
   return (
     <aside className="sidebar sidebar-left d-none d-md-block">
       <div className="p-3">
-        <h5>Toolbox Left</h5>
+        <h5>Toolbox</h5>
         <ul className="nav flex-column">
           <li className="nav-item">
             <button className="nav-link" onClick={handleGrayscale}>
-              To Grayscale
+              Grayscale
             </button>
           </li>
           <li className="nav-item">

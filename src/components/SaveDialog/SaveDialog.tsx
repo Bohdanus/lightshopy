@@ -22,25 +22,30 @@ const SaveDialog = ({ show, onClose, onSave, defaultFilename = 'image' }: SaveDi
         onClose();
       };
 
-      modalRef.current.addEventListener('hidden.bs.modal', handleHidden);
+      const currentModal = modalRef.current;
+      currentModal.addEventListener('hidden.bs.modal', handleHidden);
 
       return () => {
-        modalRef.current?.removeEventListener('hidden.bs.modal', handleHidden);
+        currentModal.removeEventListener('hidden.bs.modal', handleHidden);
+        bsModal.current?.dispose();
       };
     }
-  }, [onClose]);
+  }, []); // Only initialize once
 
   useEffect(() => {
     if (show) {
       bsModal.current?.show();
     } else {
+      // Check if it's already hidden to avoid unnecessary calls
+      // or just call hide() - Bootstrap handles it usually
       bsModal.current?.hide();
     }
   }, [show]);
 
   const handleSave = () => {
     onSave(filename, format);
-    onClose();
+    // onClose() will be triggered by show prop change or manual hide
+    bsModal.current?.hide();
   };
 
   return (
@@ -51,7 +56,7 @@ const SaveDialog = ({ show, onClose, onSave, defaultFilename = 'image' }: SaveDi
             <h5 className="modal-title" id="saveDialogLabel">
               Save File As...
             </h5>
-            <button type="button" className="btn-close" onClick={onClose} aria-label="Close"></button>
+            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div className="modal-body">
             <div className="mb-3">
@@ -83,7 +88,7 @@ const SaveDialog = ({ show, onClose, onSave, defaultFilename = 'image' }: SaveDi
             </div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
+            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">
               Cancel
             </button>
             <button type="button" className="btn btn-primary" onClick={handleSave}>

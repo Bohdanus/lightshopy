@@ -1,5 +1,5 @@
-import React, {createContext, useContext, useState, type ReactNode, useRef} from 'react';
-import {loadImageFile} from "../tools/imageLoader.ts";
+import React, { createContext, useContext, useState, type ReactNode, useRef } from 'react';
+import { loadImageFile } from '../tools/imageLoader.ts';
 
 interface ImageContextType {
   image: HTMLImageElement | null;
@@ -9,8 +9,8 @@ interface ImageContextType {
 
 const ImageContext = createContext<ImageContextType>({
   image: null,
-  loadImageFromDisk: () => { },
-  setImage: () => { }
+  loadImageFromDisk: () => {},
+  setImage: () => {},
 });
 
 export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -35,18 +35,13 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const loadImageFromDisk = () => {
     fileInputRef.current?.click();
-  }
+  };
 
   return (
-    <ImageContext.Provider value={{ image, loadImageFromDisk, setImage }}>
-      {children}
-      <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          accept="image/*"
-          style={{ display: 'none' }}
-      />    </ImageContext.Provider>
+    <>
+      <ImageContext.Provider value={{ image, loadImageFromDisk, setImage }}>{children}</ImageContext.Provider>
+      <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{ display: 'none' }} />
+    </>
   );
 };
 

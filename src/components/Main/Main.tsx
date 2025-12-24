@@ -47,21 +47,21 @@ const Main = ({ onOpenClick }: MainProps) => {
     }, [image]);
 
     return (
-        <main
-            className={`main-content p-3 d-flex align-items-center justify-content-center ${isDragging ? 'bg-light border border-primary' : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            style={{ transition: 'background-color 0.2s, border 0.2s' }}
-        >
-            {!image ? (
-                <button className="btn btn-primary btn-lg" onClick={onOpenClick}>
-                    Open File
-                </button>
-            ) : (
-                <canvas ref={canvasRef} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-            )}
-        </main>
+      <main
+        className={`main-content p-3 d-flex align-items-center justify-content-center ${isDragging ? 'bg-light border border-primary' : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        style={{ transition: 'background-color 0.2s, border 0.2s' }}
+      >
+        {image ? (
+          <canvas ref={canvasRef} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+        ) : (
+          <button className="btn btn-primary btn-lg" onClick={onOpenClick}>
+            Open File
+          </button>
+        )}
+      </main>
     );
 }
 

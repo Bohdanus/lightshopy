@@ -1,3 +1,7 @@
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/mixins";
+
 .app-container {
   display: grid;
   height: 100%;
@@ -7,10 +11,6 @@
     "header header header"
     "left   main   right"
     "footer footer footer";
-
-  @import "bootstrap/scss/functions";
-  @import "bootstrap/scss/variables";
-  @import "bootstrap/scss/mixins";
 
   @include media-breakpoint-down(md) {
     grid-template-columns: 1fr;
