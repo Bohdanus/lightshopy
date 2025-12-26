@@ -1,19 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import { Offcanvas } from 'bootstrap';
 
 import './MobileMenu.scss';
-import { useImage } from '../../contexts/ImageContext.tsx';
-import { applyGrayscale } from '../../tools/grayscale.ts';
-import { applyBlur } from '../../tools/blur.ts';
+import { ImageContext } from '../../contexts/ImageContext';
+import { ToolsContext } from '../../contexts/ToolsContext';
+import HistoryControls from '../HistoryControls/HistoryControls';
 
-interface MobileMenuProps {
-  onOpenClick: () => void;
-  onSaveClick: () => void;
-}
-
-const MobileMenu = ({ onOpenClick, onSaveClick }: MobileMenuProps) => {
-  const { image, setImage } = useImage();
-  const [isOpen, setIsOpen] = useState(false);
+const MobileMenu = () => {
+  const { openLoadImageDialog, openSaveImageDialog } = useContext(ImageContext);
+  const { addToHistoryAndRun } = useContext(ToolsContext);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const offcanvasRef = useRef<HTMLDivElement>(null);
   const bsOffcanvas = useRef<Offcanvas | null>(null);
@@ -25,17 +20,6 @@ const MobileMenu = ({ onOpenClick, onSaveClick }: MobileMenuProps) => {
   useEffect(() => {
     if (offcanvasRef.current) {
       bsOffcanvas.current = new Offcanvas(offcanvasRef.current);
-
-      const handleShow = () => setIsOpen(true);
-      const handleHidden = () => setIsOpen(false);
-
-      offcanvasRef.current.addEventListener('show.bs.offcanvas', handleShow);
-      offcanvasRef.current.addEventListener('hidden.bs.offcanvas', handleHidden);
-
-      return () => {
-        offcanvasRef.current?.removeEventListener('show.bs.offcanvas', handleShow);
-        offcanvasRef.current?.removeEventListener('hidden.bs.offcanvas', handleHidden);
-      };
     }
   }, []);
 
@@ -44,32 +28,30 @@ const MobileMenu = ({ onOpenClick, onSaveClick }: MobileMenuProps) => {
   };
 
   const handleGrayscale = async () => {
-    const newImg = await applyGrayscale(image);
-    setImage(newImg);
+    await addToHistoryAndRun('grayscale');
     bsOffcanvas.current?.hide();
   };
 
   const handleBlur = async () => {
-    const newImg = await applyBlur(image);
-    setImage(newImg);
+    await addToHistoryAndRun('blur');
     bsOffcanvas.current?.hide();
   };
 
   const handleOpenClick = () => {
     bsOffcanvas.current?.hide();
-    onOpenClick();
+    openLoadImageDialog();
   };
 
   const handleSaveClick = () => {
     bsOffcanvas.current?.hide();
-    onSaveClick();
+    openSaveImageDialog();
   };
 
   return (
     <>
-      {!isOpen && (
+      <div className="mobile-top-stripe d-md-none bg-dark w-100 d-flex align-items-center justify-content-between px-2">
         <button
-          className="btn btn-dark floating-hamburger d-md-none"
+          className="btn btn-dark mobile-hamburger"
           type="button"
           onClick={toggleMenu}
           aria-label="Toggle navigation"
@@ -88,7 +70,8 @@ const MobileMenu = ({ onOpenClick, onSaveClick }: MobileMenuProps) => {
             />
           </svg>
         </button>
-      )}
+        <HistoryControls />
+      </div>
 
       <div
         className="offcanvas offcanvas-start mobile-menu-sidebar"
@@ -115,7 +98,7 @@ const MobileMenu = ({ onOpenClick, onSaveClick }: MobileMenuProps) => {
                 <h2 className="accordion-header" id="headingFile">
                   <button
                     className={`accordion-button ${openSection === 'file' ? '' : 'collapsed'}`}
-                    style={{ background: '#eee', color: 'black' }}
+                    style={{ background: '#e1e1e1', color: 'black' }}
                     type="button"
                     onClick={() => toggleSection('file')}
                     aria-controls="collapseFile"
@@ -150,7 +133,7 @@ const MobileMenu = ({ onOpenClick, onSaveClick }: MobileMenuProps) => {
                   <button
                     className={`accordion-button ${openSection === 'edit' ? '' : 'collapsed'}`}
                     type="button"
-                    style={{ background: '#eee', color: 'black' }}
+                    style={{ background: '#e1e1e1', color: 'black' }}
                     onClick={() => toggleSection('edit')}
                     aria-controls="collapseEdit"
                   >

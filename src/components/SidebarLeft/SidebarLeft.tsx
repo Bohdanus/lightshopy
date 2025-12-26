@@ -1,19 +1,17 @@
-import { useImage } from '../../contexts/ImageContext.tsx';
-import { applyGrayscale } from '../../tools/grayscale.ts';
-import { applyBlur } from '../../tools/blur.ts';
+import { useContext } from 'react';
+
 import './Sidebar.scss';
+import { ToolsContext } from '../../contexts/ToolsContext';
 
 const SidebarLeft = () => {
-  const { image, setImage } = useImage();
+  const { addToHistoryAndRun } = useContext(ToolsContext);
 
   const handleGrayscale = async () => {
-    const newImg = await applyGrayscale(image);
-    setImage(newImg);
+    await addToHistoryAndRun('grayscale');
   };
 
   const handleBlur = async () => {
-    const newImg = await applyBlur(image);
-    setImage(newImg);
+    await addToHistoryAndRun('blur');
   };
 
   return (

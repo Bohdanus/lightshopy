@@ -2,50 +2,39 @@ import { useState, useEffect, useRef } from 'react';
 import { Modal } from 'bootstrap';
 
 interface SaveDialogProps {
-  show: boolean;
+  proposedName: string;
   onClose: () => void;
   onSave: (filename: string, format: string) => void;
-  defaultFilename?: string;
 }
 
-const SaveDialog = ({ show, onClose, onSave, defaultFilename = 'image' }: SaveDialogProps) => {
-  const [filename, setFilename] = useState(defaultFilename);
+const SaveDialog = ({ proposedName, onClose, onSave }: SaveDialogProps) => {
+  const [filename, setFilename] = useState(proposedName);
   const [format, setFormat] = useState('image/png');
   const modalRef = useRef<HTMLDivElement>(null);
   const bsModal = useRef<Modal | null>(null);
 
   useEffect(() => {
+    setFilename(proposedName);
+  }, [proposedName]);
+
+  useEffect(() => {
     if (modalRef.current) {
       bsModal.current = new Modal(modalRef.current);
-
-      const handleHidden = () => {
-        onClose();
-      };
+      bsModal.current?.show();
 
       const currentModal = modalRef.current;
-      currentModal.addEventListener('hidden.bs.modal', handleHidden);
+      currentModal.addEventListener('hidden.bs.modal', onClose);
 
       return () => {
-        currentModal.removeEventListener('hidden.bs.modal', handleHidden);
+        currentModal.removeEventListener('hidden.bs.modal', onClose);
         bsModal.current?.dispose();
       };
     }
-  }, []); // Only initialize once
-
-  useEffect(() => {
-    if (show) {
-      bsModal.current?.show();
-    } else {
-      // Check if it's already hidden to avoid unnecessary calls
-      // or just call hide() - Bootstrap handles it usually
-      bsModal.current?.hide();
-    }
-  }, [show]);
+  }, [onClose]);
 
   const handleSave = () => {
     onSave(filename, format);
-    // onClose() will be triggered by show prop change or manual hide
-    bsModal.current?.hide();
+    onClose();
   };
 
   return (

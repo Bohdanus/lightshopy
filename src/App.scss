@@ -14,8 +14,10 @@
 
   @include media-breakpoint-down(md) {
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr;
-    grid-template-areas: "main";
+    grid-template-rows: 50px 1fr;
+    grid-template-areas:
+      "header"
+      "main";
   }
 }
 

@@ -1,29 +1,23 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useImage } from '../../contexts/ImageContext.tsx';
-import { applyGrayscale } from '../../tools/grayscale.ts';
-import { applyBlur } from '../../tools/blur.ts';
+import { useState, useEffect, useRef, useCallback, useContext } from 'react';
+import { ImageContext } from '../../contexts/ImageContext';
+import { ToolsContext } from '../../contexts/ToolsContext';
+import HistoryControls from '../HistoryControls/HistoryControls';
 
-interface DesktopHeaderProps {
-  onOpenClick: () => void;
-  onSaveClick: () => void;
-}
-
-const DesktopHeader = ({ onOpenClick, onSaveClick }: DesktopHeaderProps) => {
-  const { image, setImage } = useImage();
+const DesktopHeader = () => {
+  const { openLoadImageDialog, openSaveImageDialog } = useContext(ImageContext);
+  const { addToHistoryAndRun } = useContext(ToolsContext);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   const fileMenuRef = useRef<HTMLLIElement>(null);
   const editMenuRef = useRef<HTMLLIElement>(null);
 
   const handleGrayscale = async () => {
-    const newImg = await applyGrayscale(image);
-    setImage(newImg);
+    await addToHistoryAndRun('grayscale');
     setOpenMenu(null);
   };
 
   const handleBlur = async () => {
-    const newImg = await applyBlur(image);
-    setImage(newImg);
+    await addToHistoryAndRun('blur');
     setOpenMenu(null);
   };
 
@@ -66,7 +60,7 @@ const DesktopHeader = ({ onOpenClick, onSaveClick }: DesktopHeaderProps) => {
                 className="dropdown-item"
                 type="button"
                 onClick={() => {
-                  onOpenClick();
+                  openLoadImageDialog();
                   setOpenMenu(null);
                 }}
               >
@@ -78,7 +72,7 @@ const DesktopHeader = ({ onOpenClick, onSaveClick }: DesktopHeaderProps) => {
                 className="dropdown-item"
                 type="button"
                 onClick={() => {
-                  onSaveClick();
+                  openSaveImageDialog();
                   setOpenMenu(null);
                 }}
               >
@@ -109,6 +103,9 @@ const DesktopHeader = ({ onOpenClick, onSaveClick }: DesktopHeaderProps) => {
           </ul>
         </li>
       </ul>
+      <div className="navbar-nav ms-auto">
+        <HistoryControls />
+      </div>
     </header>
   );
 };
