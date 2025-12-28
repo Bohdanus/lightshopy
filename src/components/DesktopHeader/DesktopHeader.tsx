@@ -3,24 +3,24 @@ import { ImageContext } from '../../contexts/ImageContext';
 import HistoryControls from '../HistoryControls/HistoryControls';
 
 const DesktopHeader = () => {
-  const { addToHistory, openLoadImageDialog, openSaveImageDialog } = useContext(ImageContext);
+  const { startEmptyTool, openLoadImageDialog, openSaveImageDialog } = useContext(ImageContext);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   const fileMenuRef = useRef<HTMLLIElement>(null);
   const editMenuRef = useRef<HTMLLIElement>(null);
 
-  const handleColors = async () => {
-    await addToHistory('colors');
+  const handleColors = () => {
+    startEmptyTool('colors');
     setOpenMenu(null);
   };
 
-  const handleBlur = async () => {
-    await addToHistory('blur');
+  const handleBlur = () => {
+    startEmptyTool('blur');
     setOpenMenu(null);
   };
 
-  const handleLevels = async () => {
-    await addToHistory('levels');
+  const handleLevels = () => {
+    startEmptyTool('levels');
     setOpenMenu(null);
   };
 

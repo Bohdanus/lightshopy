@@ -1,8 +1,9 @@
 import React, { useMemo, useEffect } from 'react';
 import './Levels.scss';
-import { lastUsedSettings } from '../../../tools/settings.ts';
-import { throttle } from 'lodash';
+import { defaultSettings } from '../../../tools/settings.ts';
+import { isEqual, throttle } from 'lodash-es';
 import { THROTTLE_TIME } from '../../../constants';
+import UndoButton from '../../Common/UndoButton.tsx';
 
 interface LevelsToolbarProps {
   args: { brightness?: number; contrast?: number };
@@ -30,8 +31,8 @@ const Levels: React.FC<LevelsToolbarProps> = ({ args, onChange }) => {
     throttledOnChange({ ...args, contrast });
   };
 
-  const brightness = args.brightness ?? lastUsedSettings.levels.brightness;
-  const contrast = args.contrast ?? lastUsedSettings.levels.contrast;
+  const { brightness, contrast } = args;
+  const hasDefaultValues = isEqual(args, defaultSettings.levels);
 
   return (
     <div className="levels-toolbar">
@@ -47,7 +48,7 @@ const Levels: React.FC<LevelsToolbarProps> = ({ args, onChange }) => {
           className="levels-slider"
         />
         <span>
-          Value: <b>{brightness}%</b>
+          <b>{brightness}%</b>
         </span>
       </div>
       <div className="slider-group">
@@ -62,9 +63,11 @@ const Levels: React.FC<LevelsToolbarProps> = ({ args, onChange }) => {
           className="levels-slider"
         />
         <span>
-          Value: <b>{contrast}%</b>
+          <b>{contrast}%</b>
         </span>
       </div>
+
+      <UndoButton disabled={hasDefaultValues} />
     </div>
   );
 };

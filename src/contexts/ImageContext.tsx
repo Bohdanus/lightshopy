@@ -7,7 +7,7 @@ export type ToolArgs = Record<string, string | number>;
 export type HistoryItem = {
   tool: ToolName;
   args: ToolArgs;
-  image: HTMLImageElement;
+  image: HTMLImageElement | null;
 };
 
 interface ImageContextType {
@@ -21,10 +21,10 @@ interface ImageContextType {
 
   getCurrentTool: () => HistoryItem | undefined;
   startEmptyTool: (tool: ToolName) => void;
-  addToHistory: (toolName: ToolName, args?: ToolArgs) => Promise<void>;
-  updateLastHistoryItem: (args?: ToolArgs) => Promise<void>;
-  undo: () => Promise<void>;
-  redo: () => Promise<void>;
+  // addToHistory: (toolName: ToolName, args?: ToolArgs) => Promise<void>;
+  updateLastHistoryItem: (args: ToolArgs) => void;
+  undo: () => void;
+  redo: () => void;
   canUndo: () => boolean;
   canRedo: () => boolean;
 }
@@ -42,10 +42,10 @@ export const ImageContext = createContext<ImageContextType>({
     return undefined;
   },
   startEmptyTool: () => {},
-  addToHistory: () => Promise.resolve(),
-  updateLastHistoryItem: () => Promise.resolve(),
-  undo: () => Promise.resolve(),
-  redo: () => Promise.resolve(),
+  // addToHistory: () => Promise.resolve(),
+  updateLastHistoryItem: () => {},
+  undo: () => {},
+  redo: () => {},
   canUndo: () => false,
   canRedo: () => false,
 });

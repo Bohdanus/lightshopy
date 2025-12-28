@@ -4,7 +4,8 @@ import { saveImage } from './saveToFile.ts';
 import SaveDialog from '../components/SaveDialog/SaveDialog.tsx';
 import { type HistoryItem, ImageContext, type ToolArgs, type ToolName } from './ImageContext.tsx';
 import { toolsMap } from '../tools/toolsMap.ts';
-import { lastUsedSettings } from '../tools/settings.ts';
+import { defaultSettings } from '../tools/settings.ts';
+import { isEqual } from 'lodash-es';
 
 export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [fileName, setFileName] = useState('');
@@ -99,8 +100,7 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (currentEmptyTool) {
       return {
         tool: currentEmptyTool,
-        // @ts-expect-error: mess with polymorphic args
-        args: { ...lastUsedSettings[currentEmptyTool] },
+        args: { ...defaultSettings[currentEmptyTool] },
         image: getCurrentImage()!,
       };
     }
@@ -109,35 +109,50 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return history[historyLength - 1];
   }
 
-  async function addToHistory(toolName: ToolName, args?: ToolArgs) {
-    if (!originalImage) return;
+  // async function addToHistory(toolName: ToolName, args?: ToolArgs) {
+  // if (!originalImage) return;
+  //
+  // // @ts-expect-error: mess with polymorphic args
+  // args ??= { ...defaultSettings[toolName] } as ToolArgs;
+  //
+  // const image = await toolsMap[toolName].imageProcessor(getCurrentImage())(args);
+  //
+  // const newHistory = [...history.slice(0, historyLength), { tool: toolName, args, image }];
+  // setCurrentEmptyTool(null);
+  // setHistory(newHistory);
+  // setHistoryLength(newHistory.length);
+  // }
 
-    // @ts-expect-error: mess with polymorphic args
-    args ??= { ...lastUsedSettings[toolName] } as ToolArgs;
-
-    const image = await toolsMap[toolName].imageProcessor(getCurrentImage())(args);
-
-    const newHistory = [...history.slice(0, historyLength), { tool: toolName, args, image }];
-    setCurrentEmptyTool(null);
-    setHistory(newHistory);
-    setHistoryLength(newHistory.length);
-  }
-
-  async function updateLastHistoryItem(args?: ToolArgs) {
+  function updateLastHistoryItem(args: ToolArgs) {
     if (!originalImage) return;
 
     const currentTool = getCurrentTool();
-    if (!currentTool) return;
+    if (!currentTool) return; // shouldn't normally happen, but just in case
 
-    const replaceLastItem = !!currentEmptyTool;
+    const toolName = currentTool.tool;
+    if (isEqual(args, defaultSettings[toolName])) {
+      if (currentEmptyTool) {
+        // should never happen, but just in case
+        return;
+      }
+      setCurrentEmptyTool(toolName);
+      const newHistory = history.slice(0, historyLength - 1);
+      setHistory(newHistory);
+      setHistoryLength(newHistory.length);
+      return;
+    }
 
+    const replaceLastItem = !currentEmptyTool;
+
+    // should normally have args, but just in case
     args ??= currentTool.args;
-    const image = await toolsMap[currentTool.tool].imageProcessor(getPrevImage())(args);
-    const newHistoryItem = { tool: currentTool.tool, args, image };
+    const image = toolsMap[currentTool.tool].imageProcessor(getPrevImage())(args);
+    const newHistory = history.slice(0, historyLength - (replaceLastItem ? 1 : 0));
+    newHistory.push({ tool: currentTool.tool, args, image });
 
     setCurrentEmptyTool(null);
-    setHistory([...history.slice(0, historyLength - (replaceLastItem ? 1 : 0)), newHistoryItem]);
-    setHistoryLength(history.length);
+    setHistory(newHistory);
+    setHistoryLength(newHistory.length);
   }
 
   // async function calculateImageToPosition(position: number) {
@@ -152,9 +167,11 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   //   return image;
   // }
 
-  async function undo() {
+  function undo() {
     if (historyLength > 0) {
+      const oldHistoryItem = history[historyLength - 1];
       setHistoryLength(historyLength - 1);
+      setCurrentEmptyTool(oldHistoryItem.tool);
     }
   }
 
@@ -162,7 +179,7 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return historyLength > 0;
   }
 
-  async function redo() {
+  function redo() {
     if (historyLength < history.length) {
       setHistoryLength(historyLength + 1);
     }
@@ -188,7 +205,7 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     _setOriginalImage: handleImageUpload,
     startEmptyTool,
     getCurrentTool,
-    addToHistory,
+    // addToHistory,
     updateLastHistoryItem,
     undo,
     redo,

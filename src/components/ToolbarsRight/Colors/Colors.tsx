@@ -1,8 +1,9 @@
 import React, { useMemo, useEffect } from 'react';
 import './Colors.scss';
-import { lastUsedSettings } from '../../../tools/settings.ts';
-import { throttle } from 'lodash';
+import { defaultSettings } from '../../../tools/settings.ts';
+import { isEqual, throttle } from 'lodash-es';
 import { THROTTLE_TIME } from '../../../constants';
+import UndoButton from '../../Common/UndoButton.tsx';
 
 interface ColorsToolbarProps {
   args: { grayscale?: number; sepia?: number; saturation?: number };
@@ -36,9 +37,8 @@ const Colors: React.FC<ColorsToolbarProps> = ({ args, onChange }) => {
     throttledOnChange({ ...args, saturation });
   };
 
-  const grayscale = args.grayscale ?? lastUsedSettings.colors.grayscale;
-  const sepia = args.sepia ?? lastUsedSettings.colors.sepia;
-  const saturation = args.saturation ?? lastUsedSettings.colors.saturation;
+  const { grayscale, sepia, saturation } = args;
+  const hasDefaultValues = isEqual(args, defaultSettings.colors);
 
   return (
     <div className="colors-toolbar">
@@ -89,6 +89,8 @@ const Colors: React.FC<ColorsToolbarProps> = ({ args, onChange }) => {
           <b>{saturation}%</b>
         </span>
       </div>
+
+      <UndoButton disabled={hasDefaultValues} />
     </div>
   );
 };

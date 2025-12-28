@@ -6,7 +6,7 @@ import { ImageContext } from '../../contexts/ImageContext';
 import HistoryControls from '../HistoryControls/HistoryControls';
 
 const MobileMenu = () => {
-  const { addToHistory, openLoadImageDialog, openSaveImageDialog } = useContext(ImageContext);
+  const { startEmptyTool, openLoadImageDialog, openSaveImageDialog } = useContext(ImageContext);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const offcanvasRef = useRef<HTMLDivElement>(null);
   const bsOffcanvas = useRef<Offcanvas | null>(null);
@@ -25,18 +25,18 @@ const MobileMenu = () => {
     bsOffcanvas.current?.toggle();
   };
 
-  const handleColors = async () => {
-    await addToHistory('colors');
+  const handleColors = () => {
+    startEmptyTool('colors');
     bsOffcanvas.current?.hide();
   };
 
-  const handleBlur = async () => {
-    await addToHistory('blur');
+  const handleBlur = () => {
+    startEmptyTool('blur');
     bsOffcanvas.current?.hide();
   };
 
-  const handleLevels = async () => {
-    await addToHistory('levels');
+  const handleLevels = () => {
+    startEmptyTool('levels');
     bsOffcanvas.current?.hide();
   };
 

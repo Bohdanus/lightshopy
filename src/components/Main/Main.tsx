@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useContext } from 'react';
+import { useState, useContext } from 'react';
 import { ImageContext } from '../../contexts/ImageContext';
 
 interface MainProps {
@@ -6,9 +6,8 @@ interface MainProps {
 }
 
 const Main = ({ onOpenClick }: MainProps) => {
-  const { currentImage, _setOriginalImage } = useContext(ImageContext);
+  const { currentImage, originalImage, _setOriginalImage } = useContext(ImageContext);
   const [isDragging, setIsDragging] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
@@ -27,17 +26,27 @@ const Main = ({ onOpenClick }: MainProps) => {
     await _setOriginalImage(file);
   };
 
-  useEffect(() => {
-    if (currentImage && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        canvas.width = currentImage.width;
-        canvas.height = currentImage.height;
-        ctx.drawImage(currentImage, 0, 0);
-      }
+  const renderContent = () => {
+    if (!originalImage) {
+      return (
+        <button className="btn btn-primary btn-lg" onClick={onOpenClick}>
+          Open File
+        </button>
+      );
     }
-  }, [currentImage]);
+
+    if (!currentImage) {
+      return <b>error processing image</b>;
+    }
+
+    return (
+      <img
+        src={currentImage.src}
+        alt="current image"
+        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }}
+      />
+    );
+  };
 
   return (
     <main
@@ -47,16 +56,7 @@ const Main = ({ onOpenClick }: MainProps) => {
       onDrop={handleDrop}
       style={{ transition: 'background-color 0.2s, border 0.2s' }}
     >
-      {currentImage ? (
-        <canvas
-          ref={canvasRef}
-          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }}
-        />
-      ) : (
-        <button className="btn btn-primary btn-lg" onClick={onOpenClick}>
-          Open File
-        </button>
-      )}
+      {renderContent()}
     </main>
   );
 };
