@@ -1,9 +1,9 @@
 import { useContext } from 'react';
 import './HistoryControls.scss';
-import { ToolsContext } from '../../contexts/ToolsContext';
+import { ImageContext } from '../../contexts/ImageContext.tsx';
 
 const HistoryControls = () => {
-  const { undo, redo, canUndo, canRedo } = useContext(ToolsContext);
+  const { undo, redo, canUndo, canRedo } = useContext(ImageContext);
 
   return (
     <div className="history-controls d-flex gap-1">

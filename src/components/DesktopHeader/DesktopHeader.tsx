@@ -1,23 +1,26 @@
 import { useState, useEffect, useRef, useCallback, useContext } from 'react';
 import { ImageContext } from '../../contexts/ImageContext';
-import { ToolsContext } from '../../contexts/ToolsContext';
 import HistoryControls from '../HistoryControls/HistoryControls';
 
 const DesktopHeader = () => {
-  const { openLoadImageDialog, openSaveImageDialog } = useContext(ImageContext);
-  const { addToHistoryAndRun } = useContext(ToolsContext);
+  const { addToHistory, openLoadImageDialog, openSaveImageDialog } = useContext(ImageContext);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   const fileMenuRef = useRef<HTMLLIElement>(null);
   const editMenuRef = useRef<HTMLLIElement>(null);
 
-  const handleGrayscale = async () => {
-    await addToHistoryAndRun('grayscale');
+  const handleColors = async () => {
+    await addToHistory('colors');
     setOpenMenu(null);
   };
 
   const handleBlur = async () => {
-    await addToHistoryAndRun('blur');
+    await addToHistory('blur');
+    setOpenMenu(null);
+  };
+
+  const handleLevels = async () => {
+    await addToHistory('levels');
     setOpenMenu(null);
   };
 
@@ -91,13 +94,18 @@ const DesktopHeader = () => {
           </button>
           <ul className="dropdown-menu" style={{ display: openMenu === 'edit' ? 'block' : 'none' }}>
             <li>
-              <button className="dropdown-item" type="button" onClick={handleGrayscale}>
-                Grayscale
+              <button className="dropdown-item" type="button" onClick={handleColors}>
+                Colors
               </button>
             </li>
             <li>
               <button className="dropdown-item" type="button" onClick={handleBlur}>
                 Blur
+              </button>
+            </li>
+            <li>
+              <button className="dropdown-item" type="button" onClick={handleLevels}>
+                Levels
               </button>
             </li>
           </ul>

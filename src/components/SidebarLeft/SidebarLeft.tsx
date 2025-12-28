@@ -1,17 +1,21 @@
 import { useContext } from 'react';
 
 import './Sidebar.scss';
-import { ToolsContext } from '../../contexts/ToolsContext';
+import { ImageContext } from '../../contexts/ImageContext.tsx';
 
 const SidebarLeft = () => {
-  const { addToHistoryAndRun } = useContext(ToolsContext);
+  const { currentImage, startEmptyTool } = useContext(ImageContext);
 
-  const handleGrayscale = async () => {
-    await addToHistoryAndRun('grayscale');
+  const handleColors = () => {
+    startEmptyTool('colors');
   };
 
-  const handleBlur = async () => {
-    await addToHistoryAndRun('blur');
+  const handleBlur = () => {
+    startEmptyTool('blur');
+  };
+
+  const handleLevels = () => {
+    startEmptyTool('levels');
   };
 
   return (
@@ -20,13 +24,18 @@ const SidebarLeft = () => {
         <h5>Toolbox</h5>
         <ul className="nav flex-column">
           <li className="nav-item">
-            <button className="nav-link" onClick={handleGrayscale}>
-              Grayscale
+            <button className="nav-link" disabled={!currentImage} onClick={handleColors}>
+              Colors
             </button>
           </li>
           <li className="nav-item">
-            <button className="nav-link" onClick={handleBlur}>
+            <button className="nav-link" disabled={!currentImage} onClick={handleBlur}>
               Blur
+            </button>
+          </li>
+          <li className="nav-item">
+            <button className="nav-link" disabled={!currentImage} onClick={handleLevels}>
+              Levels
             </button>
           </li>
         </ul>

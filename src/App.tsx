@@ -8,7 +8,6 @@ import BottomToolbar from './components/BottomToolbar/BottomToolbar';
 import Main from './components/Main/Main.tsx';
 import { ImageContext } from './contexts/ImageContext';
 import { ImageProvider } from './contexts/ImageProvider';
-import { ToolsProvider } from './contexts/ToolsProvider';
 
 function AppContent() {
   const { openLoadImageDialog } = useContext(ImageContext);
@@ -30,14 +29,7 @@ function AppContent() {
 function App() {
   return (
     <ImageProvider>
-      <ImageContext.Consumer>
-        {({ originalImage }) => (
-          /* this is a hack to reset tools when original image changes */
-          <ToolsProvider key={originalImage?.src || 'none'}>
-            <AppContent />
-          </ToolsProvider>
-        )}
-      </ImageContext.Consumer>
+      <AppContent />
     </ImageProvider>
   );
 }

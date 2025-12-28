@@ -3,12 +3,10 @@ import { Offcanvas } from 'bootstrap';
 
 import './MobileMenu.scss';
 import { ImageContext } from '../../contexts/ImageContext';
-import { ToolsContext } from '../../contexts/ToolsContext';
 import HistoryControls from '../HistoryControls/HistoryControls';
 
 const MobileMenu = () => {
-  const { openLoadImageDialog, openSaveImageDialog } = useContext(ImageContext);
-  const { addToHistoryAndRun } = useContext(ToolsContext);
+  const { addToHistory, openLoadImageDialog, openSaveImageDialog } = useContext(ImageContext);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const offcanvasRef = useRef<HTMLDivElement>(null);
   const bsOffcanvas = useRef<Offcanvas | null>(null);
@@ -27,13 +25,18 @@ const MobileMenu = () => {
     bsOffcanvas.current?.toggle();
   };
 
-  const handleGrayscale = async () => {
-    await addToHistoryAndRun('grayscale');
+  const handleColors = async () => {
+    await addToHistory('colors');
     bsOffcanvas.current?.hide();
   };
 
   const handleBlur = async () => {
-    await addToHistoryAndRun('blur');
+    await addToHistory('blur');
+    bsOffcanvas.current?.hide();
+  };
+
+  const handleLevels = async () => {
+    await addToHistory('levels');
     bsOffcanvas.current?.hide();
   };
 
@@ -149,13 +152,18 @@ const MobileMenu = () => {
                   <div className="accordion-body p-0">
                     <ul className="list-group list-group-flush">
                       <li className="list-group-item bg-transparent border-0 ps-4">
-                        <a className="text-decoration-none text-dark d-block w-100" href="#" onClick={handleGrayscale}>
-                          Grayscale
+                        <a className="text-decoration-none text-dark d-block w-100" href="#" onClick={handleColors}>
+                          Colors
                         </a>
                       </li>
                       <li className="list-group-item bg-transparent border-0 ps-4">
                         <a className="text-decoration-none text-dark d-block w-100" href="#" onClick={handleBlur}>
                           Blur
+                        </a>
+                      </li>
+                      <li className="list-group-item bg-transparent border-0 ps-4">
+                        <a className="text-decoration-none text-dark d-block w-100" href="#" onClick={handleLevels}>
+                          Levels
                         </a>
                       </li>
                     </ul>
@@ -165,34 +173,6 @@ const MobileMenu = () => {
             </div>
           </div>
           <hr />
-          <div className="px-3 d-none">
-            <h6>Left Tools</h6>
-            <ul className="nav flex-column mb-4">
-              <li className="nav-item">
-                <a className="nav-link" href="#" onClick={handleGrayscale}>
-                  To Grayscale
-                </a>
-              </li>
-              <li className="nav-item">
-                <a className="nav-link" href="#" onClick={handleBlur}>
-                  Blur
-                </a>
-              </li>
-            </ul>
-            <h6>Right Tools</h6>
-            <ul className="nav flex-column">
-              <li className="nav-item">
-                <a className="nav-link" href="#">
-                  Property 1
-                </a>
-              </li>
-              <li className="nav-item">
-                <a className="nav-link" href="#">
-                  Property 2
-                </a>
-              </li>
-            </ul>
-          </div>
         </div>
       </div>
     </>

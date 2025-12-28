@@ -48,7 +48,10 @@ const Main = ({ onOpenClick }: MainProps) => {
       style={{ transition: 'background-color 0.2s, border 0.2s' }}
     >
       {currentImage ? (
-        <canvas ref={canvasRef} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+        <canvas
+          ref={canvasRef}
+          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }}
+        />
       ) : (
         <button className="btn btn-primary btn-lg" onClick={onOpenClick}>
           Open File

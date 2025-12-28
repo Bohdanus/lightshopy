@@ -1,23 +1,51 @@
 import { createContext } from 'react';
+import { toolsMap } from '../tools/toolsMap.ts';
+
+export type ToolName = keyof typeof toolsMap;
+export type ToolArgs = Record<string, string | number>;
+
+export type HistoryItem = {
+  tool: ToolName;
+  args: ToolArgs;
+  image: HTMLImageElement;
+};
 
 interface ImageContextType {
   fileName: string;
   setFileName: (name: string) => void;
-  currentImage: HTMLImageElement | null;
   originalImage: HTMLImageElement | null;
+  currentImage: HTMLImageElement | null;
   openLoadImageDialog: () => void;
   openSaveImageDialog: () => void;
-  setCurrentImage: (image: HTMLImageElement | null) => void;
   _setOriginalImage: (image?: File) => Promise<void>; // use with caution now and refactor later
+
+  getCurrentTool: () => HistoryItem | undefined;
+  startEmptyTool: (tool: ToolName) => void;
+  addToHistory: (toolName: ToolName, args?: ToolArgs) => Promise<void>;
+  updateLastHistoryItem: (args?: ToolArgs) => Promise<void>;
+  undo: () => Promise<void>;
+  redo: () => Promise<void>;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
 }
 
 export const ImageContext = createContext<ImageContextType>({
   fileName: '',
   setFileName: () => {},
-  currentImage: null,
   originalImage: null,
+  currentImage: null,
   openLoadImageDialog: () => {},
   openSaveImageDialog: () => {},
-  setCurrentImage: () => {},
   _setOriginalImage: () => Promise.resolve(),
+
+  getCurrentTool: () => {
+    return undefined;
+  },
+  startEmptyTool: () => {},
+  addToHistory: () => Promise.resolve(),
+  updateLastHistoryItem: () => Promise.resolve(),
+  undo: () => Promise.resolve(),
+  redo: () => Promise.resolve(),
+  canUndo: () => false,
+  canRedo: () => false,
 });
