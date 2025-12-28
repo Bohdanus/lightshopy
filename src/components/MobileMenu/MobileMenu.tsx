@@ -40,6 +40,16 @@ const MobileMenu = () => {
     bsOffcanvas.current?.hide();
   };
 
+  const handleTransform = () => {
+    startEmptyTool('transform');
+    bsOffcanvas.current?.hide();
+  };
+
+  const handleDraw = () => {
+    startEmptyTool('draw');
+    bsOffcanvas.current?.hide();
+  };
+
   const handleOpenClick = () => {
     bsOffcanvas.current?.hide();
     openLoadImageDialog();
@@ -164,6 +174,16 @@ const MobileMenu = () => {
                       <li className="list-group-item bg-transparent border-0 ps-4">
                         <a className="text-decoration-none text-dark d-block w-100" href="#" onClick={handleLevels}>
                           Levels
+                        </a>
+                      </li>
+                      <li className="list-group-item bg-transparent border-0 ps-4">
+                        <a className="text-decoration-none text-dark d-block w-100" href="#" onClick={handleTransform}>
+                          Transform
+                        </a>
+                      </li>
+                      <li className="list-group-item bg-transparent border-0 ps-4">
+                        <a className="text-decoration-none text-dark d-block w-100" href="#" onClick={handleDraw}>
+                          Draw
                         </a>
                       </li>
                     </ul>

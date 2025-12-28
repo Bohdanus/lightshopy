@@ -1,7 +1,6 @@
 import React, { useMemo, useEffect } from 'react';
 import './Blur.scss';
-import { defaultSettings } from '../../../tools/settings.ts';
-import { isEqual, throttle } from 'lodash-es';
+import { throttle } from 'lodash-es';
 import { THROTTLE_TIME } from '../../../constants';
 
 import UndoButton from '../../Common/UndoButton.tsx';
@@ -24,7 +23,7 @@ const Blur: React.FC<BlurToolbarProps> = ({ args, onChange }) => {
     throttledOnChange({ radius: Number(event.target.value) });
   };
   const { radius } = args;
-  const hasDefaultValues = isEqual(args, defaultSettings.blur);
+  const hasDefaultValues = radius === 0;
 
   return (
     <div className="blur-toolbar">
@@ -42,7 +41,7 @@ const Blur: React.FC<BlurToolbarProps> = ({ args, onChange }) => {
         Radius: <b>{radius}px</b>
       </span>
 
-      <UndoButton disabled={hasDefaultValues} />
+      <UndoButton disabled={hasDefaultValues} text="Undo Blur" />
     </div>
   );
 };

@@ -1,8 +1,10 @@
 import { createContext } from 'react';
 import { toolsMap } from '../tools/toolsMap.ts';
 
+export type Point = { x: number; y: number };
+
 export type ToolName = keyof typeof toolsMap;
-export type ToolArgs = Record<string, string | number>;
+export type ToolArgs = Record<string, string | number | Point[]>;
 
 export type HistoryItem = {
   tool: ToolName;
@@ -14,7 +16,7 @@ interface ImageContextType {
   fileName: string;
   setFileName: (name: string) => void;
   originalImage: HTMLImageElement | null;
-  currentImage: HTMLImageElement | null;
+  currentCtx: CanvasRenderingContext2D | null;
   openLoadImageDialog: () => void;
   openSaveImageDialog: () => void;
   _setOriginalImage: (image?: File) => Promise<void>; // use with caution now and refactor later
@@ -33,7 +35,7 @@ export const ImageContext = createContext<ImageContextType>({
   fileName: '',
   setFileName: () => {},
   originalImage: null,
-  currentImage: null,
+  currentCtx: null,
   openLoadImageDialog: () => {},
   openSaveImageDialog: () => {},
   _setOriginalImage: () => Promise.resolve(),

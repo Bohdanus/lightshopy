@@ -24,6 +24,16 @@ const DesktopHeader = () => {
     setOpenMenu(null);
   };
 
+  const handleTransform = () => {
+    startEmptyTool('transform');
+    setOpenMenu(null);
+  };
+
+  const handleDraw = () => {
+    startEmptyTool('draw');
+    setOpenMenu(null);
+  };
+
   const handleClickOutside = useCallback(
     (event: MouseEvent) => {
       if (openMenu === 'file' && fileMenuRef.current && !fileMenuRef.current.contains(event.target as Node)) {
@@ -106,6 +116,16 @@ const DesktopHeader = () => {
             <li>
               <button className="dropdown-item" type="button" onClick={handleLevels}>
                 Levels
+              </button>
+            </li>
+            <li>
+              <button className="dropdown-item" type="button" onClick={handleTransform}>
+                Transform
+              </button>
+            </li>
+            <li>
+              <button className="dropdown-item" type="button" onClick={handleDraw}>
+                Draw
               </button>
             </li>
           </ul>

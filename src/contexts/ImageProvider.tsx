@@ -6,10 +6,12 @@ import { type HistoryItem, ImageContext, type ToolArgs, type ToolName } from './
 import { toolsMap } from '../tools/toolsMap.ts';
 import { defaultSettings } from '../tools/settings.ts';
 import { isEqual } from 'lodash-es';
+import { imgToCtx } from '../tools/functions.ts';
 
 export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [fileName, setFileName] = useState('');
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
+  const [currentCtx, setCurrentCtx] = useState<CanvasRenderingContext2D | null>(null);
   // const [prevHistoryImage, setPrevHistoryImage] = useState<HTMLImageElement | null>(null);
   // const [currentImage, setCurrentImage] = useState<HTMLImageElement | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -39,6 +41,8 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const img = await loadImageFile(file);
       setFileName(file.name);
       setOriginalImage(img);
+      setCurrentCtx(imgToCtx(img));
+
       clearHistory();
     } catch (error) {
       console.error('Failed to load image:', error);
@@ -130,8 +134,9 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (!currentTool) return; // shouldn't normally happen, but just in case
 
     const toolName = currentTool.tool;
-    if (isEqual(args, defaultSettings[toolName])) {
+    if (toolName !== 'draw' && isEqual(args, defaultSettings[toolName])) {
       if (currentEmptyTool) {
+        console.log('currentEmptyTool is not null, but args are equal to defaultSettings');
         // should never happen, but just in case
         return;
       }
@@ -139,6 +144,7 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const newHistory = history.slice(0, historyLength - 1);
       setHistory(newHistory);
       setHistoryLength(newHistory.length);
+      setCurrentCtx(imgToCtx(getPrevImage()));
       return;
     }
 
@@ -146,13 +152,20 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     // should normally have args, but just in case
     args ??= currentTool.args;
-    const image = toolsMap[currentTool.tool].imageProcessor(getPrevImage())(args);
+    const [ctx, imagePromise] = toolsMap[currentTool.tool].imageProcessor(
+      replaceLastItem ? getPrevImage() : getCurrentImage()
+    )(args);
     const newHistory = history.slice(0, historyLength - (replaceLastItem ? 1 : 0));
-    newHistory.push({ tool: currentTool.tool, args, image });
+    const newHistoryItem = { tool: currentTool.tool, args, image: null } as HistoryItem;
+    newHistory.push(newHistoryItem);
+    imagePromise?.then((img) => {
+      newHistoryItem.image = img;
+    });
 
     setCurrentEmptyTool(null);
     setHistory(newHistory);
     setHistoryLength(newHistory.length);
+    setCurrentCtx(ctx);
   }
 
   // async function calculateImageToPosition(position: number) {
@@ -168,10 +181,17 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // }
 
   function undo() {
+    const currentToolName = getCurrentTool()?.tool;
     if (historyLength > 0) {
-      const oldHistoryItem = history[historyLength - 1];
-      setHistoryLength(historyLength - 1);
-      setCurrentEmptyTool(oldHistoryItem.tool);
+      const newLength = historyLength - 1;
+      const newToolName = history[newLength - 1]?.tool;
+      if (newToolName === currentToolName) {
+        setCurrentEmptyTool(null);
+      } else {
+        setCurrentEmptyTool(currentToolName ?? null);
+      }
+      setHistoryLength(newLength);
+      updateCurrentCtx(newLength);
     }
   }
 
@@ -180,9 +200,23 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }
 
   function redo() {
+    const currentToolName = getCurrentTool()?.tool;
     if (historyLength < history.length) {
-      setHistoryLength(historyLength + 1);
+      const newLength = historyLength + 1;
+      const newToolName = history[newLength - 1]?.tool;
+      if (newToolName === currentToolName) {
+        setCurrentEmptyTool(null);
+      } else {
+        setCurrentEmptyTool(currentToolName ?? null);
+      }
+      setHistoryLength(newLength);
+      updateCurrentCtx(newLength);
     }
+  }
+
+  function updateCurrentCtx(newLength: number) {
+    const img = newLength === 0 ? originalImage : history[newLength - 1].image;
+    setCurrentCtx(imgToCtx(img));
   }
 
   function canRedo() {
@@ -190,6 +224,9 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }
 
   function clearHistory() {
+    if (!currentEmptyTool && historyLength > 0) {
+      setCurrentEmptyTool(history[historyLength - 1].tool);
+    }
     setHistory([]);
     setHistoryLength(0);
   }
@@ -199,7 +236,7 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     fileName,
     setFileName,
     originalImage,
-    currentImage: getCurrentImage(),
+    currentCtx,
     openLoadImageDialog,
     openSaveImageDialog,
     _setOriginalImage: handleImageUpload,

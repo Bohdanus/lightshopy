@@ -1,18 +1,24 @@
 import { blur } from './blur';
 import { colors } from './colors';
 import { levels } from './levels';
+import { transform } from './transform';
+import { draw } from './draw';
 import type { ToolArgs } from '../contexts/ImageContext.tsx';
 import { defaultSettings } from './settings.ts';
 import Colors from '../components/ToolbarsRight/Colors/Colors.tsx';
 import Blur from '../components/ToolbarsRight/Blur/Blur.tsx';
 import Levels from '../components/ToolbarsRight/Levels/Levels.tsx';
+import Transform from '../components/ToolbarsRight/Transform/Transform.tsx';
+import Draw from '../components/ToolbarsRight/Draw/Draw.tsx';
 import type { ToolbarRightComponent } from '../components/ToolbarsRight/types.ts';
 
 type ToolsMap = Record<
   string,
   {
     icon: string;
-    imageProcessor: (image: HTMLImageElement | null) => (args: ToolArgs) => HTMLImageElement | null;
+    imageProcessor: (
+      image: HTMLImageElement | null
+    ) => (args: ToolArgs) => [CanvasRenderingContext2D, Promise<HTMLImageElement>] | [null, null];
     defaultSettings: ToolArgs;
     toolboxComponent: ToolbarRightComponent;
   }
@@ -21,20 +27,37 @@ type ToolsMap = Record<
 export const toolsMap: ToolsMap = {
   blur: {
     icon: 'blur',
+    // @ts-expect-error args
     imageProcessor: blur,
     defaultSettings: defaultSettings.blur,
     toolboxComponent: Blur,
   },
   colors: {
     icon: 'colors',
+    // @ts-expect-error args
     imageProcessor: colors,
     defaultSettings: defaultSettings.colors,
     toolboxComponent: Colors,
   },
   levels: {
     icon: 'levels',
+    // @ts-expect-error args
     imageProcessor: levels,
     defaultSettings: defaultSettings.levels,
     toolboxComponent: Levels,
+  },
+  transform: {
+    icon: 'transform',
+    // @ts-expect-error args
+    imageProcessor: transform,
+    defaultSettings: defaultSettings.transform,
+    toolboxComponent: Transform,
+  },
+  draw: {
+    icon: 'draw',
+    // @ts-expect-error args
+    imageProcessor: draw,
+    defaultSettings: defaultSettings.draw,
+    toolboxComponent: Draw,
   },
 };

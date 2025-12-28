@@ -3,9 +3,10 @@ import { ImageContext } from '../../contexts/ImageContext.tsx';
 
 interface UndoButtonProps {
   disabled: boolean;
+  text?: string;
 }
 
-const UndoButton: React.FC<UndoButtonProps> = ({ disabled }) => {
+const UndoButton: React.FC<UndoButtonProps> = ({ disabled, text }) => {
   const { undo } = useContext(ImageContext);
 
   return (
@@ -15,7 +16,7 @@ const UndoButton: React.FC<UndoButtonProps> = ({ disabled }) => {
       onClick={undo}
       style={disabled ? { opacity: 0.55 } : {}}
     >
-      Undo
+      {text ?? 'Reset'}
     </button>
   );
 };
