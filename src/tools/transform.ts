@@ -1,35 +1,24 @@
 import { applyFilter } from './applyFilter.ts';
 
+export type TransformToolType = { rotate: number; mirrorH: boolean; mirrorV: boolean };
+
 export const transform =
-  (image: HTMLImageElement | null) =>
-  ({
-    rotate = 0,
-    mirrorH = false,
-    mirrorV = false,
-  }: {
-    rotate: number;
-    mirrorH: boolean;
-    mirrorV: boolean;
-  }): [CanvasRenderingContext2D, Promise<HTMLImageElement>] | [null, null] => {
-    if (!image) {
-      return [null, null];
-    }
+  (canvas: HTMLCanvasElement, snapshot: ImageBitmap) =>
+  ({ rotate = 0, mirrorH = false, mirrorV = false }: TransformToolType) => {
+    return applyFilter(canvas, snapshot, (ctx: CanvasRenderingContext2D, source: ImageBitmap) => {
+      const angle = (rotate * Math.PI) / 180;
+      const absCos = Math.abs(Math.cos(angle));
+      const absSin = Math.abs(Math.sin(angle));
 
-    const angle = (rotate * Math.PI) / 180;
-    const absCos = Math.abs(Math.cos(angle));
-    const absSin = Math.abs(Math.sin(angle));
+      const width = Math.round(snapshot.width * absCos + snapshot.height * absSin);
+      const height = Math.round(snapshot.width * absSin + snapshot.height * absCos);
 
-    const width = image.width * absCos + image.height * absSin;
-    const height = image.width * absSin + image.height * absCos;
+      canvas.width = width;
+      canvas.height = height;
 
-    return applyFilter(image, {
-      width,
-      height,
-      draw: (ctx) => {
-        ctx.translate(width / 2, height / 2);
-        ctx.rotate(angle);
-        ctx.scale(mirrorH ? -1 : 1, mirrorV ? -1 : 1);
-        ctx.drawImage(image, -image.width / 2, -image.height / 2);
-      },
+      ctx.translate(width / 2, height / 2);
+      ctx.rotate(angle);
+      ctx.scale(mirrorH ? -1 : 1, mirrorV ? -1 : 1);
+      ctx.drawImage(source, -snapshot.width / 2, -snapshot.height / 2);
     });
   };

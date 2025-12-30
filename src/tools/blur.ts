@@ -1,6 +1,11 @@
 import { applyFilter } from './applyFilter.ts';
 
+export type BlurToolType = { radius: number };
+
 export const blur =
-  (image: HTMLImageElement | null) =>
-  ({ radius }: { radius: number }) =>
-    applyFilter(image, `blur(${radius}px)`);
+  (canvas: HTMLCanvasElement, snapshot: ImageBitmap) =>
+  ({ radius }: BlurToolType) =>
+    applyFilter(canvas, snapshot, (ctx, source) => {
+      ctx.filter = `blur(${radius}px)`;
+      ctx.drawImage(source, 0, 0);
+    });

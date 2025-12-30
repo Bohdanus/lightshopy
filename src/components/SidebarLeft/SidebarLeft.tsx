@@ -4,7 +4,7 @@ import './Sidebar.scss';
 import { ImageContext } from '../../contexts/ImageContext.tsx';
 
 const SidebarLeft = () => {
-  const { currentCtx, startEmptyTool } = useContext(ImageContext);
+  const { originalImage, startEmptyTool } = useContext(ImageContext);
 
   const handleColors = () => {
     startEmptyTool('colors');
@@ -32,27 +32,27 @@ const SidebarLeft = () => {
         <h5>Toolbox</h5>
         <ul className="nav flex-column">
           <li className="nav-item">
-            <button className="nav-link" disabled={!currentCtx} onClick={handleColors}>
+            <button className="nav-link" disabled={!originalImage} onClick={handleColors}>
               Colors
             </button>
           </li>
           <li className="nav-item">
-            <button className="nav-link" disabled={!currentCtx} onClick={handleBlur}>
+            <button className="nav-link" disabled={!originalImage} onClick={handleBlur}>
               Blur
             </button>
           </li>
           <li className="nav-item">
-            <button className="nav-link" disabled={!currentCtx} onClick={handleLevels}>
+            <button className="nav-link" disabled={!originalImage} onClick={handleLevels}>
               Levels
             </button>
           </li>
           <li className="nav-item">
-            <button className="nav-link" disabled={!currentCtx} onClick={handleTransform}>
+            <button className="nav-link" disabled={!originalImage} onClick={handleTransform}>
               Transform
             </button>
           </li>
           <li className="nav-item">
-            <button className="nav-link" disabled={!currentCtx} onClick={handleDraw}>
+            <button className="nav-link" disabled={!originalImage} onClick={handleDraw}>
               Draw
             </button>
           </li>

@@ -1,7 +1,12 @@
 import { exp1_1 } from './functions.ts';
 import { applyFilter } from './applyFilter.ts';
 
+export type ColorsToolType = { grayscale: number; sepia: number; saturation: number };
+
 export const colors =
-  (image: HTMLImageElement | null) =>
-  ({ grayscale, sepia, saturation }: { grayscale: number; sepia: number; saturation: number }) =>
-    applyFilter(image, `grayscale(${grayscale}%) sepia(${sepia}%) saturate(${exp1_1(saturation, 2.1)})`);
+  (canvas: HTMLCanvasElement, snapshot: ImageBitmap) =>
+  ({ grayscale, sepia, saturation }: ColorsToolType) =>
+    applyFilter(canvas, snapshot, (ctx, source) => {
+      ctx.filter = `grayscale(${grayscale}%) sepia(${sepia}%) saturate(${exp1_1(saturation, 2.1)})`;
+      ctx.drawImage(source, 0, 0);
+    });

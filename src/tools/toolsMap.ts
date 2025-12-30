@@ -16,9 +16,7 @@ type ToolsMap = Record<
   string,
   {
     icon: string;
-    imageProcessor: (
-      image: HTMLImageElement | null
-    ) => (args: ToolArgs) => [CanvasRenderingContext2D, Promise<HTMLImageElement>] | [null, null];
+    imageProcessor: (canvas: HTMLCanvasElement, snapshot: ImageBitmap) => (args: ToolArgs) => Promise<ImageBitmap>;
     defaultSettings: ToolArgs;
     toolboxComponent: ToolbarRightComponent;
   }
@@ -54,6 +52,7 @@ export const toolsMap: ToolsMap = {
     toolboxComponent: Transform,
   },
   draw: {
+    ignoreUpdate: true,
     icon: 'draw',
     // @ts-expect-error args
     imageProcessor: draw,

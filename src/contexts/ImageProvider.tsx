@@ -6,18 +6,18 @@ import { type HistoryItem, ImageContext, type ToolArgs, type ToolName } from './
 import { toolsMap } from '../tools/toolsMap.ts';
 import { defaultSettings } from '../tools/settings.ts';
 import { isEqual } from 'lodash-es';
-import { imgToCtx } from '../tools/functions.ts';
+import { writeImageToCanvas } from '../tools/functions.ts';
 
 export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fileName, setFileName] = useState('');
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
-  const [currentCtx, setCurrentCtx] = useState<CanvasRenderingContext2D | null>(null);
   // const [prevHistoryImage, setPrevHistoryImage] = useState<HTMLImageElement | null>(null);
   // const [currentImage, setCurrentImage] = useState<HTMLImageElement | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [currentEmptyTool, setCurrentEmptyTool] = useState<ToolName | null>(null);
+  const [currentEmptyTool, setCurrentEmptyTool] = useState<ToolName | null | undefined>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyLength, setHistoryLength] = useState<number>(0);
 
@@ -39,11 +39,21 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     try {
       const img = await loadImageFile(file);
+      const canvas = canvasRef.current!;
+      writeImageToCanvas(img, canvas);
+
       setFileName(file.name);
       setOriginalImage(img);
-      setCurrentCtx(imgToCtx(img));
-
       clearHistory();
+
+      const bitmap = await createImageBitmap(canvas); // or maybe from inage??
+      setHistory([
+        {
+          args: {},
+          bitmap,
+        },
+      ]);
+      setHistoryLength(1);
     } catch (error) {
       console.error('Failed to load image:', error);
     }
@@ -54,7 +64,7 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const openSaveImageDialog = () => {
-    if (getCurrentImage()) {
+    if (getCurrentBitmap()) {
       setShowSaveDialog(true);
     } else {
       alert('No image to save!');
@@ -62,7 +72,7 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const handleSave = (filename: string, format: string) => {
-    const success = saveImage(getCurrentImage(), filename, format);
+    const success = saveImage(canvasRef.current, filename, format);
     if (success) {
       setFileName(filename);
     }
@@ -72,14 +82,19 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setShowSaveDialog(false);
   };
 
-  function getCurrentImage() {
-    if (historyLength === 0) return originalImage;
-    return history[historyLength - 1].image;
+  function getCurrentBitmap() {
+    return history[historyLength - 1].bitmap!;
   }
 
-  function getPrevImage() {
-    if (historyLength < 2) return originalImage;
-    return history[historyLength - 2].image;
+  function getPrevBitmap() {
+    if (historyLength === 1) {
+      return history[0].bitmap!;
+    }
+    return history[historyLength - 2].bitmap!;
+  }
+
+  function getNextBitmap() {
+    return history[historyLength].bitmap!;
   }
 
   // function getPrevHistoryImage() {
@@ -95,22 +110,49 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   //   return prevHistoryImage;
   // }
 
-  function startEmptyTool(toolName: ToolName) {
-    setCurrentEmptyTool(toolName);
-    setHistory(history.slice(0, historyLength));
+  function saveCurrentBitmap({
+    bitmapToDisplay,
+    length = historyLength,
+  }: { bitmapToDisplay?: ImageBitmap; length?: number } = {}) {
+    if (length > 1) {
+      createImageBitmap(canvasRef.current!).then((bitmap) => {
+        history[length - 1].bitmap = bitmap;
+        const ctx = canvasRef.current!.getContext('2d')!;
+        ctx.reset();
+        ctx.drawImage(bitmapToDisplay ?? bitmap, 0, 0);
+      });
+    }
   }
 
-  function getCurrentTool(): HistoryItem | undefined {
+  function startEmptyTool(toolName: ToolName) {
+    setCurrentEmptyTool(toolName);
+    saveCurrentBitmap();
+    // if (historyLength > 0) {
+    //   canvasRef.current!.toBlob(
+    //     (blob) => {
+    //       history[historyLength - 1].imageBlob = blob;
+    //     },
+    //     'image/webp',
+    //     1
+    //   );
+    // }
+  }
+
+  function getCurrentTool(): ToolName | null | undefined {
     if (currentEmptyTool) {
-      return {
-        tool: currentEmptyTool,
-        args: { ...defaultSettings[currentEmptyTool] },
-        image: getCurrentImage()!,
-      };
+      return currentEmptyTool;
     }
 
+    if (historyLength === 0) return null;
+    return history[historyLength - 1].tool;
+  }
+
+  function getCurrentArgs(): ToolArgs | undefined {
+    if (currentEmptyTool) {
+      return defaultSettings[currentEmptyTool];
+    }
     if (historyLength === 0) return undefined;
-    return history[historyLength - 1];
+    return history[historyLength - 1].args;
   }
 
   // async function addToHistory(toolName: ToolName, args?: ToolArgs) {
@@ -127,13 +169,12 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // setHistoryLength(newHistory.length);
   // }
 
-  function updateLastHistoryItem(args: ToolArgs) {
+  function updateLastHistoryItem(args: ToolArgs, forceNewEntry?: boolean) {
     if (!originalImage) return;
 
-    const currentTool = getCurrentTool();
-    if (!currentTool) return; // shouldn't normally happen, but just in case
+    const toolName = getCurrentTool();
+    if (!toolName) return; // shouldn't normally happen, but just in case
 
-    const toolName = currentTool.tool;
     if (toolName !== 'draw' && isEqual(args, defaultSettings[toolName])) {
       if (currentEmptyTool) {
         console.log('currentEmptyTool is not null, but args are equal to defaultSettings');
@@ -144,28 +185,32 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const newHistory = history.slice(0, historyLength - 1);
       setHistory(newHistory);
       setHistoryLength(newHistory.length);
-      setCurrentCtx(imgToCtx(getPrevImage()));
       return;
     }
 
-    const replaceLastItem = !currentEmptyTool;
+    const replaceLastItem = forceNewEntry ? false : !currentEmptyTool;
 
     // should normally have args, but just in case
-    args ??= currentTool.args;
-    const [ctx, imagePromise] = toolsMap[currentTool.tool].imageProcessor(
-      replaceLastItem ? getPrevImage() : getCurrentImage()
-    )(args);
-    const newHistory = history.slice(0, historyLength - (replaceLastItem ? 1 : 0));
-    const newHistoryItem = { tool: currentTool.tool, args, image: null } as HistoryItem;
-    newHistory.push(newHistoryItem);
-    imagePromise?.then((img) => {
-      newHistoryItem.image = img;
-    });
+    args ??= { ...defaultSettings[toolName] };
 
-    setCurrentEmptyTool(null);
+    if (toolName !== 'draw') {
+      toolsMap[toolName].imageProcessor(
+        canvasRef.current!,
+        replaceLastItem ? getPrevBitmap() : getCurrentBitmap()
+      )(args);
+    }
+
+    const newHistory = history.slice(0, historyLength - (replaceLastItem ? 1 : 0));
+    const newHistoryItem = { tool: toolName, args } as HistoryItem;
+    newHistory.push(newHistoryItem);
+
+    if (!replaceLastItem) {
+      saveCurrentBitmap({ length: newHistory.length });
+    }
+
+    setCurrentEmptyTool(forceNewEntry ? toolName : null);
     setHistory(newHistory);
     setHistoryLength(newHistory.length);
-    setCurrentCtx(ctx);
   }
 
   // async function calculateImageToPosition(position: number) {
@@ -181,42 +226,41 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // }
 
   function undo() {
-    const currentToolName = getCurrentTool()?.tool;
-    if (historyLength > 0) {
+    const toolName = getCurrentTool();
+    if (canUndo()) {
       const newLength = historyLength - 1;
       const newToolName = history[newLength - 1]?.tool;
-      if (newToolName === currentToolName) {
+      if (newToolName === toolName) {
         setCurrentEmptyTool(null);
       } else {
-        setCurrentEmptyTool(currentToolName ?? null);
+        setCurrentEmptyTool(toolName ?? null);
       }
       setHistoryLength(newLength);
-      updateCurrentCtx(newLength);
+
+      saveCurrentBitmap({ bitmapToDisplay: getPrevBitmap() });
     }
   }
 
   function canUndo() {
-    return historyLength > 0;
+    return historyLength > 1;
   }
 
   function redo() {
-    const currentToolName = getCurrentTool()?.tool;
-    if (historyLength < history.length) {
+    const toolName = getCurrentTool();
+    if (canRedo()) {
       const newLength = historyLength + 1;
       const newToolName = history[newLength - 1]?.tool;
-      if (newToolName === currentToolName) {
+      if (newToolName === toolName) {
         setCurrentEmptyTool(null);
       } else {
-        setCurrentEmptyTool(currentToolName ?? null);
+        setCurrentEmptyTool(toolName ?? null);
       }
       setHistoryLength(newLength);
-      updateCurrentCtx(newLength);
-    }
-  }
 
-  function updateCurrentCtx(newLength: number) {
-    const img = newLength === 0 ? originalImage : history[newLength - 1].image;
-    setCurrentCtx(imgToCtx(img));
+      const ctx = canvasRef.current!.getContext('2d')!;
+      ctx.reset();
+      ctx.drawImage(getNextBitmap(), 0, 0);
+    }
   }
 
   function canRedo() {
@@ -227,21 +271,20 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (!currentEmptyTool && historyLength > 0) {
       setCurrentEmptyTool(history[historyLength - 1].tool);
     }
-    setHistory([]);
-    setHistoryLength(0);
   }
 
   // NOSONAR: React Compiler handles memoization of this object
   const providerValue = {
+    canvasRef,
     fileName,
     setFileName,
     originalImage,
-    currentCtx,
     openLoadImageDialog,
     openSaveImageDialog,
     _setOriginalImage: handleImageUpload,
+    toolName: getCurrentTool(),
+    toolArgs: getCurrentArgs(),
     startEmptyTool,
-    getCurrentTool,
     // addToHistory,
     updateLastHistoryItem,
     undo,

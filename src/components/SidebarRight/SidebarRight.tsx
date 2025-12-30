@@ -4,10 +4,8 @@ import { ImageContext } from '../../contexts/ImageContext.tsx';
 import { toolsMap } from '../../tools/toolsMap.ts';
 
 const SidebarRight = () => {
-  const { getCurrentTool, updateLastHistoryItem } = useContext(ImageContext);
-  const currentTool = getCurrentTool();
-
-  if (!currentTool) {
+  const { toolName, toolArgs, updateLastHistoryItem } = useContext(ImageContext);
+  if (!toolName) {
     return (
       <aside className="sidebar sidebar-right d-none d-md-block">
         <div className="p-3"></div>
@@ -15,8 +13,8 @@ const SidebarRight = () => {
     );
   }
 
-  const { tool, args } = currentTool;
-  const Component = toolsMap[tool].toolboxComponent;
+  const args = { ...toolArgs };
+  const Component = toolsMap[toolName].toolboxComponent;
 
   return (
     <aside className="sidebar sidebar-right d-none d-md-block">

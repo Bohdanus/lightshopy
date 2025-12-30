@@ -31,7 +31,7 @@ const Blur: React.FC<BlurToolbarProps> = ({ args, onChange }) => {
       <input
         id="blur-slider"
         type="range"
-        min="1"
+        min="0"
         max="100"
         value={radius}
         onChange={handleChange}

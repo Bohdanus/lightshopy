@@ -12,17 +12,15 @@ export function exp1_1(val: number, k: number = 2) {
   return res;
 }
 
-export function imgToCtx(image: HTMLImageElement | null) {
-  if (!image) return null;
+export function writeImageToCanvas(image: HTMLImageElement | null, canvas: HTMLCanvasElement | null) {
+  if (!image || !canvas) return null;
 
-  const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   if (ctx) {
     canvas.width = image.width;
     canvas.height = image.height;
     ctx.drawImage(image, 0, 0);
   }
-  return ctx;
 }
 
 // function base64ToUint8Array(base64) {
