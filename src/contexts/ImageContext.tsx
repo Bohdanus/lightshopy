@@ -1,5 +1,6 @@
 import { createContext, type RefObject } from 'react';
 import { toolsMap } from '../tools/toolsMap.ts';
+import type { CropToolType } from '../tools/crop.ts';
 
 export type Point = { x: number; y: number };
 
@@ -7,7 +8,8 @@ export type ToolName = keyof typeof toolsMap;
 export type ToolArgs = Record<string, string | number | Point[]>;
 
 export type HistoryItem = {
-  tool?: ToolName | null;
+  saved: boolean;
+  tool: ToolName;
   args: ToolArgs;
   bitmap?: ImageBitmap | null;
   imageBlob?: Blob | null;
@@ -24,7 +26,6 @@ interface ImageContextType {
 
   toolName: ToolName | null | undefined;
   toolArgs: ToolArgs | undefined;
-  setToolArgs: (args: ToolArgs) => void;
   startEmptyTool: (tool: ToolName) => void;
   addCanvasToHistory: (toolName: ToolName, args: ToolArgs) => void;
   updateLastHistoryItem: (args: ToolArgs, forceNewEntry?: boolean) => void;
@@ -33,12 +34,16 @@ interface ImageContextType {
   canUndo: () => boolean;
   canRedo: () => boolean;
 
+  crop: CropToolType | null;
+  setCrop: (args: CropToolType | null) => void;
+
+  canvasDimensions: string;
+
   zoom: number;
   setZoom: (zoom: number) => void;
 
   interactionMode: 'pan' | 'draw' | 'crop';
   setInteractionMode: (mode: 'pan' | 'draw' | 'crop') => void;
-  cancelTool: () => void;
 }
 
 export const ImageContext = createContext<ImageContextType>({
@@ -53,7 +58,6 @@ export const ImageContext = createContext<ImageContextType>({
 
   toolName: null,
   toolArgs: {},
-  setToolArgs: () => {},
   startEmptyTool: () => {},
   addCanvasToHistory: () => {},
   updateLastHistoryItem: () => {},
@@ -62,10 +66,14 @@ export const ImageContext = createContext<ImageContextType>({
   canUndo: () => false,
   canRedo: () => false,
 
+  crop: null,
+  setCrop: () => {},
+
+  canvasDimensions: '',
+
   zoom: 1,
   setZoom: () => {},
 
   interactionMode: 'pan',
   setInteractionMode: () => {},
-  cancelTool: () => {},
 });

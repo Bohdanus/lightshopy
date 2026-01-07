@@ -28,6 +28,7 @@ export default defineConfig([
     rules: {
       'prettier/prettier': 'error',
       'react-compiler/react-compiler': 'error',
+      '@typescript-eslint/no-shadow': 'warn',
     },
     languageOptions: {
       ecmaVersion: 2024,

@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useContext, useEffect, useMemo } from 'react';
 import './Transform.scss';
-import { defaultSettings } from '../../../tools/settings.ts';
-import { isEqual, throttle } from 'lodash-es';
+import { throttle } from 'lodash-es';
 import { THROTTLE_TIME } from '../../../constants';
-import UndoButton from '../../Common/UndoButton.tsx';
+// import UndoButton from '../../Common/UndoButton.tsx';
+import { ImageContext } from '../../../contexts/ImageContext.tsx';
 
 interface TransformToolbarProps {
   args: { rotate?: number; mirrorH?: number; mirrorV?: number };
@@ -11,6 +11,8 @@ interface TransformToolbarProps {
 }
 
 const Transform: React.FC<TransformToolbarProps> = ({ args, onChange }) => {
+  const { crop, setCrop, startEmptyTool } = useContext(ImageContext);
+
   const rotate = args.rotate ?? 0;
   const mirrorH = args.mirrorH ?? 0;
   const mirrorV = args.mirrorV ?? 0;
@@ -48,7 +50,7 @@ const Transform: React.FC<TransformToolbarProps> = ({ args, onChange }) => {
     onChange({ rotate, mirrorH, mirrorV: mirrorV ? 0 : 1 });
   };
 
-  const hasDefaultValues = isEqual(args, defaultSettings.transform);
+  // const hasDefaultTransform = isEqual(args, defaultSettings.transform);
 
   return (
     <div className="transform-toolbar">
@@ -92,7 +94,20 @@ const Transform: React.FC<TransformToolbarProps> = ({ args, onChange }) => {
         </div>
       </div>
 
-      <UndoButton disabled={hasDefaultValues} />
+      {/*<UndoButton disabled={hasDefaultTransform} text="Reset" />*/}
+      <hr />
+
+      <button
+        className="btn btn-primary w-100 mt-3"
+        disabled={!crop || crop.width === 0 || crop.height === 0}
+        onClick={() => startEmptyTool('crop')}
+      >
+        Apply Crop
+      </button>
+
+      <button className="btn btn-outline-secondary w-100 mt-2" disabled={!crop} onClick={() => setCrop(null)}>
+        Clear Crop
+      </button>
     </div>
   );
 };

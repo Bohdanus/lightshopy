@@ -1,4 +1,4 @@
-import React, { useState, type ReactNode, useRef } from 'react';
+import React, { useState, type ReactNode, useRef, useEffect } from 'react';
 import { loadImageFile } from './loadFromFile.ts';
 import { saveImage } from './saveToFile.ts';
 import SaveDialog from '../components/SaveDialog/SaveDialog.tsx';
@@ -7,20 +7,20 @@ import { toolsMap } from '../tools/toolsMap.ts';
 import { defaultSettings, savedLastSettings } from '../tools/settings.ts';
 import { isEqual } from 'lodash-es';
 import { writeImageToCanvas } from '../tools/functions.ts';
+import type { CropToolType } from '../tools/crop.ts';
 
 export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fileName, setFileName] = useState('');
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
-  // const [prevHistoryImage, setPrevHistoryImage] = useState<HTMLImageElement | null>(null);
-  // const [currentImage, setCurrentImage] = useState<HTMLImageElement | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [currentEmptyTool, setCurrentEmptyTool] = useState<ToolName | null | undefined>(null);
-  const [currentToolArgs, setCurrentToolArgs] = useState<ToolArgs | undefined>(undefined);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyLength, setHistoryLength] = useState<number>(0);
+
+  const [crop, setCrop] = useState<CropToolType | null>(null);
   const [zoom, setZoom] = useState(1);
   const [interactionMode, setInteractionMode] = useState<'pan' | 'draw' | 'crop'>('draw');
 
@@ -52,8 +52,10 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const bitmap = await createImageBitmap(canvas); // or maybe from inage??
       setHistory([
         {
+          tool: 'init',
           args: {},
           bitmap,
+          saved: true,
         },
       ]);
       setHistoryLength(1);
@@ -117,26 +119,45 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     bitmapToDisplay, // used in case you are saving AND moving in history
     hist = history,
     length = historyLength,
-  }: { bitmapToDisplay?: ImageBitmap; hist?: HistoryItem[]; length?: number } = {}) {
-    if (length > 1) {
+    callback,
+  }: { bitmapToDisplay?: ImageBitmap; hist?: HistoryItem[]; length?: number; callback?: () => void } = {}) {
+    const historyItem = hist[length - 1];
+    if (!historyItem.saved) {
       createImageBitmap(canvasRef.current!).then((bitmap) => {
-        hist[length - 1].bitmap = bitmap;
+        historyItem.bitmap = bitmap;
+        historyItem.saved = true;
+
+        callback?.();
 
         // the below will reset the context and draw the bitmap instead of transformations
         writeImageToCanvas(bitmapToDisplay ?? bitmap, canvasRef.current);
       });
+    } else {
+      if (bitmapToDisplay) {
+        // if we were explicitly asked to SHOW a bitmap, we should do it
+        writeImageToCanvas(bitmapToDisplay, canvasRef.current);
+      }
+      // if there is callback execute it
+      callback?.();
     }
   }
 
+  useEffect(() => {
+    if (crop && currentEmptyTool === 'crop') {
+      updateLastHistoryItem(crop);
+      setCrop(null);
+    }
+  }, [crop, currentEmptyTool, updateLastHistoryItem]);
+
   function startEmptyTool(toolName: ToolName) {
-    setCurrentEmptyTool(toolName);
-    setCurrentToolArgs(savedLastSettings[toolName] || defaultSettings[toolName]);
-    if (toolName === 'crop') {
+    if (toolName === 'transform' || toolName === 'crop') {
       setInteractionMode('crop');
     } else if (toolName === 'draw') {
       setInteractionMode('draw');
+    } else {
+      setInteractionMode('pan');
     }
-    saveCurrentBitmap();
+    saveCurrentBitmap({ callback: () => setCurrentEmptyTool(toolName) });
     // if (historyLength > 0) {
     //   canvasRef.current!.toBlob(
     //     (blob) => {
@@ -158,9 +179,6 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }
 
   function getCurrentArgs(): ToolArgs | undefined {
-    if (currentToolArgs) {
-      return currentToolArgs;
-    }
     if (currentEmptyTool) {
       return savedLastSettings[currentEmptyTool] || defaultSettings[currentEmptyTool];
     }
@@ -171,21 +189,18 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   async function addCanvasToHistory(toolName: ToolName, args: ToolArgs) {
     if (!originalImage) return;
     //  savedLastSettings[toolName] = args;
-    const newHistory = [...history.slice(0, historyLength), { tool: toolName, args }];
+    const newHistory = [...history.slice(0, historyLength), { tool: toolName, args, saved: false }];
     setCurrentEmptyTool(null);
-    setCurrentToolArgs(undefined);
     setHistory(newHistory);
     setHistoryLength(newHistory.length);
     saveCurrentBitmap({ hist: newHistory, length: newHistory.length });
   }
 
-  function updateLastHistoryItem(args: ToolArgs) {
+  function updateLastHistoryItem(args: ToolArgs, forceNewItem?: boolean) {
     if (!originalImage) return;
 
     const toolName = getCurrentTool();
     if (!toolName) return; // shouldn't normally happen, but just in case
-
-    setCurrentToolArgs(args);
 
     if (isEqual(args, defaultSettings[toolName])) {
       if (currentEmptyTool) {
@@ -200,23 +215,18 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       return;
     }
 
-    const replaceLastItem = !currentEmptyTool;
+    const addNewItem = forceNewItem || currentEmptyTool;
 
     // should normally have args, but just in case
     args ??= { ...defaultSettings[toolName] };
 
-    toolsMap[toolName].imageProcessor(canvasRef.current!, replaceLastItem ? getPrevBitmap() : getCurrentBitmap())(args);
+    toolsMap[toolName].imageProcessor(canvasRef.current!, addNewItem ? getCurrentBitmap() : getPrevBitmap())(args);
 
-    const newHistory = history.slice(0, historyLength - (replaceLastItem ? 1 : 0));
-    const newHistoryItem = { tool: toolName, args } as HistoryItem;
+    const newHistory = history.slice(0, historyLength - (addNewItem ? 0 : 1));
+    const newHistoryItem = { tool: toolName, args, saved: false } as HistoryItem;
     newHistory.push(newHistoryItem);
 
-    if (!replaceLastItem) {
-      saveCurrentBitmap({ hist: newHistory, length: newHistory.length });
-    }
-
     setCurrentEmptyTool(null);
-    setCurrentToolArgs(undefined);
     setHistory(newHistory);
     setHistoryLength(newHistory.length);
   }
@@ -238,7 +248,6 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (canUndo()) {
       const newLength = historyLength - 1;
       const newToolName = history[newLength - 1]?.tool;
-      setCurrentToolArgs(undefined);
       if (newToolName === toolName) {
         setCurrentEmptyTool(null);
       } else {
@@ -260,7 +269,6 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (canRedo()) {
       const newLength = historyLength + 1;
       const newToolName = history[newLength - 1]?.tool;
-      setCurrentToolArgs(undefined);
       if (newToolName === toolName) {
         setCurrentEmptyTool(null);
       } else {
@@ -277,12 +285,6 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return historyLength < history.length;
   }
 
-  function cancelTool() {
-    setCurrentEmptyTool('crop');
-    setCurrentToolArgs(undefined);
-    setInteractionMode('crop');
-  }
-
   // NOSONAR: React Compiler handles memoization of this object
   const providerValue = {
     canvasRef,
@@ -294,7 +296,6 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     _setOriginalImage: handleImageUpload,
     toolName: getCurrentTool(),
     toolArgs: getCurrentArgs(),
-    setToolArgs: setCurrentToolArgs,
     startEmptyTool,
     addCanvasToHistory,
     updateLastHistoryItem,
@@ -302,11 +303,13 @@ export const ImageProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     redo,
     canUndo,
     canRedo,
+    crop,
+    setCrop,
+    canvasDimensions: `${canvasRef.current?.width}x${canvasRef.current?.height}`,
     zoom,
     setZoom,
     interactionMode,
     setInteractionMode,
-    cancelTool,
   };
 
   return (

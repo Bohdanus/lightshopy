@@ -10,7 +10,6 @@ import Colors from '../components/ToolbarsRight/Colors/Colors.tsx';
 import Blur from '../components/ToolbarsRight/Blur/Blur.tsx';
 import Levels from '../components/ToolbarsRight/Levels/Levels.tsx';
 import Transform from '../components/ToolbarsRight/Transform/Transform.tsx';
-import Crop from '../components/ToolbarsRight/Crop/Crop.tsx';
 import Draw from '../components/ToolbarsRight/Draw/Draw.tsx';
 import type { ToolbarRightComponent } from '../components/ToolbarsRight/types.ts';
 
@@ -59,8 +58,7 @@ export const toolsMap: ToolsMap = {
     // @ts-expect-error args
     imageProcessor: crop,
     defaultSettings: defaultSettings.crop,
-    // @ts-expect-error args
-    toolboxComponent: Crop,
+    toolboxComponent: Transform,
   },
   draw: {
     saveLastSettings: true,

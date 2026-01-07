@@ -4,7 +4,7 @@ import './Sidebar.scss';
 import { ImageContext } from '../../contexts/ImageContext.tsx';
 
 const SidebarLeft = () => {
-  const { originalImage, startEmptyTool } = useContext(ImageContext);
+  const { originalImage, startEmptyTool, toolName } = useContext(ImageContext);
 
   const handleColors = () => {
     startEmptyTool('colors');
@@ -22,10 +22,6 @@ const SidebarLeft = () => {
     startEmptyTool('transform');
   };
 
-  const handleCrop = () => {
-    startEmptyTool('crop');
-  };
-
   const handleDraw = () => {
     startEmptyTool('draw');
   };
@@ -36,32 +32,47 @@ const SidebarLeft = () => {
         <h5>Toolbox</h5>
         <ul className="nav flex-column">
           <li className="nav-item">
-            <button className="nav-link" disabled={!originalImage} onClick={handleColors}>
+            <button
+              className={`nav-link ${toolName === 'colors' ? 'active' : ''}`}
+              disabled={!originalImage}
+              onClick={handleColors}
+            >
               Colors
             </button>
           </li>
           <li className="nav-item">
-            <button className="nav-link" disabled={!originalImage} onClick={handleBlur}>
+            <button
+              className={`nav-link ${toolName === 'blur' ? 'active' : ''}`}
+              disabled={!originalImage}
+              onClick={handleBlur}
+            >
               Blur
             </button>
           </li>
           <li className="nav-item">
-            <button className="nav-link" disabled={!originalImage} onClick={handleLevels}>
+            <button
+              className={`nav-link ${toolName === 'levels' ? 'active' : ''}`}
+              disabled={!originalImage}
+              onClick={handleLevels}
+            >
               Levels
             </button>
           </li>
           <li className="nav-item">
-            <button className="nav-link" disabled={!originalImage} onClick={handleTransform}>
-              Transform
+            <button
+              className={`nav-link ${toolName === 'transform' ? 'active' : ''}`}
+              disabled={!originalImage}
+              onClick={handleTransform}
+            >
+              Crop & Transform
             </button>
           </li>
           <li className="nav-item">
-            <button className="nav-link" disabled={!originalImage} onClick={handleCrop}>
-              Crop
-            </button>
-          </li>
-          <li className="nav-item">
-            <button className="nav-link" disabled={!originalImage} onClick={handleDraw}>
+            <button
+              className={`nav-link ${toolName === 'draw' ? 'active' : ''}`}
+              disabled={!originalImage}
+              onClick={handleDraw}
+            >
               Draw
             </button>
           </li>

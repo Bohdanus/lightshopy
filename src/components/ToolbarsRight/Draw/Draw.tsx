@@ -8,10 +8,10 @@ const Draw: React.FC = () => {
   const { interactionMode, zoom } = useContext(ImageContext);
   const [args, setArgs] = useState<DrawToolNoPoints>(savedLastSettings.draw as DrawToolNoPoints);
 
-  const handleChange = (args: DrawToolNoPoints) => {
-    savedLastSettings.draw = args;
-    savedDrawPerPen[args.penType] = { alpha: args.alpha, color: args.color, size: args.size };
-    setArgs(args);
+  const handleChange = (newArgs: DrawToolNoPoints) => {
+    savedLastSettings.draw = newArgs;
+    savedDrawPerPen[newArgs.penType] = { alpha: newArgs.alpha, color: newArgs.color, size: newArgs.size };
+    setArgs(newArgs);
   };
 
   const handleColorChange = (event: ChangeEvent<HTMLInputElement>) => {

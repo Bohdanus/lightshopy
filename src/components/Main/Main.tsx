@@ -20,9 +20,10 @@ const Main = () => {
     toolName,
     addCanvasToHistory,
     openLoadImageDialog,
+    crop,
+    setCrop,
+    canvasDimensions,
     interactionMode,
-    toolArgs,
-    setToolArgs,
   } = useContext(ImageContext);
 
   const [isDragging, setIsDragging] = useState(false);
@@ -41,8 +42,8 @@ const Main = () => {
   const bufferCtx = useRef<CanvasRenderingContext2D | null>(null);
   const frameRequested = useRef(false);
 
-  const isDrawToolActive = toolName === 'draw' && interactionMode === 'draw';
-  const isCropToolActive = toolName === 'crop' && interactionMode === 'crop';
+  const isDrawToolActive = toolName === 'draw'; // && interactionMode === 'draw';
+  const isCropToolActive = interactionMode === 'crop';
 
   // const handlePointerDownMain: PointerEventHandler<HTMLDivElement> = (event) => {
   //   if (interactionMode !== 'pan') return;
@@ -109,14 +110,13 @@ const Main = () => {
 
   useEffect(() => {
     const ctx = bufferCtx.current;
-    if (ctx) {
-      ctx.clearRect(0, 0, overlayRef.current!.width, overlayRef.current!.height);
-    }
+    if (!ctx) return;
 
-    if (isCropToolActive && toolArgs && !isDrawing.current) {
-      const { x, y, width, height } = toolArgs as { x: number; y: number; width: number; height: number };
+    ctx.clearRect(0, 0, overlayRef.current!.width, overlayRef.current!.height);
+
+    if (isCropToolActive && crop && !isDrawing.current) {
+      const { x, y, width, height } = crop;
       if (width > 0 && height > 0) {
-        const ctx = bufferCtx.current!;
         const width_overlay = overlayRef.current!.width;
         const height_overlay = overlayRef.current!.height;
 
@@ -134,7 +134,7 @@ const Main = () => {
         ctx.setLineDash([]);
       }
     }
-  }, [isCropToolActive, isDrawToolActive, toolArgs]);
+  }, [canvasDimensions, crop, isCropToolActive]);
 
   // useLayoutEffect(() => {
   //   const viewport = viewportRef.current;
@@ -152,9 +152,9 @@ const Main = () => {
 
   useLayoutEffect(() => {
     if (!originalImage || !overlayRef.current) return;
-    overlayRef.current.width = originalImage.width;
-    overlayRef.current.height = originalImage.height;
-  }, [originalImage]);
+    overlayRef.current.width = canvasRef.current!.width;
+    overlayRef.current.height = canvasRef.current!.height;
+  }, [canvasDimensions]);
 
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
@@ -265,7 +265,7 @@ const Main = () => {
       const height = Math.abs(y1 - y2);
 
       if (width > 0 && height > 0) {
-        setToolArgs({
+        setCrop({
           x: Math.round(x),
           y: Math.round(y),
           width: Math.round(width),
