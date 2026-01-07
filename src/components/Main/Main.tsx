@@ -1,6 +1,16 @@
-import { useState, useContext, useRef, useLayoutEffect } from 'react';
+import {
+  type PointerEvent,
+  type PointerEventHandler,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { ImageContext, type Point } from '../../contexts/ImageContext';
-import type { DrawToolType } from '../../tools/draw.ts';
+import { type DrawToolType, setDrawTool } from '../../tools/draw.ts';
+import { savedLastSettings } from '../../tools/settings.ts';
+import './Main.scss';
 
 const Main = () => {
   const {
@@ -8,46 +18,146 @@ const Main = () => {
     originalImage,
     _setOriginalImage,
     toolName,
+    addCanvasToHistory,
+    openLoadImageDialog,
+    zoom,
+    setZoom,
+    interactionMode,
     toolArgs,
     updateLastHistoryItem,
-    openLoadImageDialog,
+    setToolArgs,
   } = useContext(ImageContext);
+
   const [isDragging, setIsDragging] = useState(false);
-  const [isDrawing, setIsDrawing] = useState(false);
+
+  // const viewportRef = useRef<HTMLDivElement | null>(null);
+  // const busRef = useRef<HTMLDivElement | null>(null);
+  // const stageRef = useRef<HTMLDivElement | null>(null);
+  const overlayRef = useRef<HTMLCanvasElement | null>(null);
+
+  const isDrawing = useRef(false);
+  const pointerId = useRef<number | null>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const pointsRef = useRef<Point[]>([]);
   const pendingPoints = useRef<Point[]>([]);
+  const cropStart = useRef<Point | null>(null);
+  const bufferCtx = useRef<CanvasRenderingContext2D | null>(null);
   const frameRequested = useRef(false);
 
-  const isDrawToolActive = toolName === 'draw';
+  const isDrawToolActive = toolName === 'draw' && interactionMode === 'draw';
+  const isCropToolActive = toolName === 'crop' && interactionMode === 'crop';
 
-  useLayoutEffect(() => {
+  // const handlePointerDownMain: PointerEventHandler<HTMLDivElement> = (event) => {
+  //   if (interactionMode !== 'pan') return;
+  //   if (event.button !== 0) return;
+  //
+  //   // todo: if you want perfection, later add hybrid pan (drag = transform, wheel = scroll)
+  //   const scrollContainer = viewportRef.current!;
+  //   const startX = event.clientX;
+  //   const startY = event.clientY;
+  //   const scrollLeft = scrollContainer.scrollLeft;
+  //   const scrollTop = scrollContainer.scrollTop;
+  //   // eslint-disable-next-line react-compiler/react-compiler
+  //   document.body.style.cursor = 'grabbing';
+  //
+  //   const handlePointerMove = (moveEvent: PointerEvent) => {
+  //     const dx = moveEvent.clientX - startX;
+  //     const dy = moveEvent.clientY - startY;
+  //     scrollContainer.scrollLeft = scrollLeft - dx;
+  //     scrollContainer.scrollTop = scrollTop - dy;
+  //   };
+  //
+  //   const handlePointerUp = () => {
+  //     window.removeEventListener('pointermove', handlePointerMove);
+  //     window.removeEventListener('pointerup', handlePointerUp);
+  //     document.body.style.cursor = '';
+  //   };
+  //
+  //   window.addEventListener('pointermove', handlePointerMove);
+  //   window.addEventListener('pointerup', handlePointerUp);
+  // };
+
+  // sets width & height for scrollbars to appear, resize
+  // useLayoutEffect(() => {
+  //   const viewport = viewportRef.current;
+  //   const bus = busRef.current;
+  //   if (!viewport || !bus) return;
+  //
+  //   const ro = new ResizeObserver(([entry]) => {
+  //     const { width, height } = entry.contentRect;
+  //     if (width === 0 || height === 0) return;
+  //     bus.style.width = `${width * zoom}px`;
+  //     bus.style.height = `${height * zoom}px`;
+  //   });
+  //
+  //   ro.observe(viewport);
+  //   return () => ro.disconnect();
+  // }, [zoom]);
+
+  // caches the context
+  useEffect(() => {
     const canvas = canvasRef.current;
+
     if (!canvas) return;
+    ctxRef.current = canvas.getContext('2d')!;
 
-    const ctx = canvas.getContext('2d')!;
-    ctxRef.current = ctx;
-
-    // Hi-DPI safe setup
-    // const dpr = window.devicePixelRatio || 1;
-    // const rect = canvas.getBoundingClientRect();
-    //
-    // // eslint-disable-next-line react-compiler/react-compiler
-    // canvas.width = rect.width * dpr;
-    // canvas.height = rect.height * dpr;
-    // ctx.scale(dpr, dpr);
-
-    if (toolName === 'draw') {
-      const { size, color } = toolArgs as DrawToolType;
-      ctx.lineWidth = size;
-      ctx.strokeStyle = color;
-      ctx.lineJoin = 'round';
-      ctx.lineCap = 'round';
-    }
+    const overlay = overlayRef.current!;
+    bufferCtx.current = overlay.getContext('2d')!;
 
     return () => {
       ctxRef.current = null;
+      bufferCtx.current = null;
     };
-  }, [canvasRef, toolName, toolArgs]);
+  }, [canvasRef]);
+
+  useEffect(() => {
+    const ctx = bufferCtx.current;
+    if (ctx) {
+      ctx.clearRect(0, 0, overlayRef.current!.width, overlayRef.current!.height);
+    }
+
+    if (isCropToolActive && toolArgs && !isDrawing.current) {
+      const { x, y, width, height } = toolArgs as { x: number; y: number; width: number; height: number };
+      if (width > 0 && height > 0) {
+        const ctx = bufferCtx.current!;
+        const width_overlay = overlayRef.current!.width;
+        const height_overlay = overlayRef.current!.height;
+
+        // Draw semi-transparent overlay
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, width_overlay, height_overlay);
+
+        // Clear the selection area
+        ctx.clearRect(x, y, width, height);
+
+        ctx.strokeStyle = '#007bff';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(x, y, width, height);
+        ctx.setLineDash([]);
+      }
+    }
+  }, [isCropToolActive, isDrawToolActive, toolArgs]);
+
+  // useLayoutEffect(() => {
+  //   const viewport = viewportRef.current;
+  //   const stage = stageRef.current;
+  //   if (!originalImage || !viewport || !stage) return;
+  //
+  //   stage.style.aspectRatio = `${originalImage.width} / ${originalImage.height}`;
+  //
+  //   // const scaleX = viewport.clientWidth / originalImage.width;
+  //   // const scaleY = viewport.clientHeight / originalImage.height;
+  //   //
+  //   // const newZoom = Math.min(scaleX, scaleY, 1);
+  //   // setZoom(newZoom);
+  // }, [canvasRef, originalImage, setZoom]);
+
+  useLayoutEffect(() => {
+    if (!originalImage || !overlayRef.current) return;
+    overlayRef.current.width = originalImage.width;
+    overlayRef.current.height = originalImage.height;
+  }, [originalImage]);
 
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
@@ -66,81 +176,195 @@ const Main = () => {
     await _setOriginalImage(file);
   };
 
-  const getCanvasCoordinates = (event: React.MouseEvent | React.TouchEvent) => {
-    if (!canvasRef.current) return null;
-    const canvas = canvasRef.current;
+  const getCanvasCoordinates = (event: PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
 
-    let clientX, clientY;
-    if ('touches' in event) {
-      clientX = event.touches[0].clientX;
-      clientY = event.touches[0].clientY;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    const rectWidth = rect.width;
+    const rectHeight = rect.height;
+
+    const canvasRatio = canvasWidth / canvasHeight;
+    const rectRatio = rectWidth / rectHeight;
+
+    let displayedWidth, displayedHeight, offsetX, offsetY;
+
+    if (canvasRatio > rectRatio) {
+      displayedWidth = rectWidth;
+      displayedHeight = rectWidth / canvasRatio;
+      offsetX = 0;
+      offsetY = (rectHeight - displayedHeight) / 2;
     } else {
-      clientX = event.clientX;
-      clientY = event.clientY;
+      displayedWidth = rectHeight * canvasRatio;
+      displayedHeight = rectHeight;
+      offsetX = (rectWidth - displayedWidth) / 2;
+      offsetY = 0;
     }
 
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    const scaleX = canvasWidth / displayedWidth;
+    const scaleY = canvasHeight / displayedHeight;
 
     return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY,
+      x: (event.clientX - rect.left - offsetX) * scaleX,
+      y: (event.clientY - rect.top - offsetY) * scaleY,
     };
   };
 
-  const handleMouseDown = (event: React.MouseEvent | React.TouchEvent) => {
-    if (!isDrawToolActive) return;
-    setIsDrawing(true);
-    const coords = getCanvasCoordinates(event);
-    if (coords && toolName) {
-      const args = toolArgs as DrawToolType;
-      const { color, size, points } = args;
-      points.push(coords);
+  const handleMouseDown: PointerEventHandler<HTMLCanvasElement> = (event) => {
+    if (event.button !== undefined && event.button !== 0) return;
 
-      const ctx = ctxRef.current!;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = size;
-      ctx.lineJoin = 'round';
-      ctx.lineCap = 'round';
+    pointerId.current = event.pointerId;
+    overlayRef.current!.setPointerCapture(event.pointerId);
 
-      ctx.beginPath();
-      ctx.moveTo(coords.x, coords.y);
-    }
-  };
+    if (isDrawToolActive) {
+      isDrawing.current = true;
 
-  const handleMouseUp = () => {
-    if (isDrawing && isDrawToolActive) {
-      if (isDrawing) {
-        updateLastHistoryItem(toolArgs!, true);
+      const alpha = (savedLastSettings.draw as DrawToolType).alpha;
+
+      const ctx = alpha === 1 ? ctxRef.current! : bufferCtx.current!;
+      setDrawTool(ctx, savedLastSettings.draw as DrawToolType);
+
+      const coords = getCanvasCoordinates(event);
+      pointsRef.current = [];
+      pendingPoints.current = [coords];
+
+      if (alpha === 1) {
+        ctx.beginPath();
+        ctx.moveTo(coords.x, coords.y);
       }
-      setIsDrawing(false);
+      draw();
+    } else if (isCropToolActive) {
+      isDrawing.current = true;
+      const coords = getCanvasCoordinates(event);
+      cropStart.current = coords;
     }
   };
 
-  const handleMouseMove = (event: React.MouseEvent | React.TouchEvent) => {
-    if (!isDrawing || !isDrawToolActive || !toolName) return;
-    const coords = getCanvasCoordinates(event);
-    if (coords) {
+  const handleMouseUp: PointerEventHandler<HTMLCanvasElement> = (event) => {
+    if (!isDrawing.current) return;
+
+    if (isDrawToolActive) {
+      draw();
+
+      ctxRef.current!.drawImage(overlayRef.current!, 0, 0);
+      bufferCtx.current!.clearRect(0, 0, overlayRef.current!.width, overlayRef.current!.height);
+
+      const args = savedLastSettings.draw as DrawToolType;
+      addCanvasToHistory('draw', { ...args, points: pointsRef.current });
+    } else if (isCropToolActive) {
+      const coords = getCanvasCoordinates(event);
+      const start = cropStart.current!;
+      const canvas = canvasRef.current!;
+
+      const x1 = Math.max(0, Math.min(canvas.width, start.x));
+      const y1 = Math.max(0, Math.min(canvas.height, start.y));
+      const x2 = Math.max(0, Math.min(canvas.width, coords.x));
+      const y2 = Math.max(0, Math.min(canvas.height, coords.y));
+
+      const x = Math.min(x1, x2);
+      const y = Math.min(y1, y2);
+      const width = Math.abs(x1 - x2);
+      const height = Math.abs(y1 - y2);
+
+      if (width > 0 && height > 0) {
+        setToolArgs({
+          x: Math.round(x),
+          y: Math.round(y),
+          width: Math.round(width),
+          height: Math.round(height),
+        });
+      }
+
+      requestAnimationFrame(() => {
+        drawCrop(coords);
+        cropStart.current = null;
+      });
+    }
+
+    isDrawing.current = false;
+    pointerId.current = null;
+    try {
+      overlayRef.current!.releasePointerCapture(event.pointerId);
+    } catch {
+      // pointer capture might have been lost already
+    }
+  };
+
+  const handleMouseMove: PointerEventHandler<HTMLCanvasElement> = (event) => {
+    if (!isDrawing.current) return;
+
+    if (isDrawToolActive) {
+      const coords = getCanvasCoordinates(event);
       pendingPoints.current.push(coords);
       if (!frameRequested.current) {
         frameRequested.current = true;
         requestAnimationFrame(draw);
       }
+    } else if (isCropToolActive) {
+      if (!frameRequested.current) {
+        frameRequested.current = true;
+        const coords = getCanvasCoordinates(event);
+        requestAnimationFrame(() => drawCrop(coords));
+      }
     }
   };
 
+  function drawCrop(coords: Point) {
+    const ctx = bufferCtx.current!;
+    const start = cropStart.current!;
+
+    const width_overlay = overlayRef.current!.width;
+    const height_overlay = overlayRef.current!.height;
+    ctx.clearRect(0, 0, width_overlay, height_overlay);
+
+    const x = Math.min(start.x, coords.x);
+    const y = Math.min(start.y, coords.y);
+    const width = Math.abs(start.x - coords.x);
+    const height = Math.abs(start.y - coords.y);
+
+    // Draw semi-transparent overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(0, 0, width_overlay, height_overlay);
+
+    // Clear the selection area
+    ctx.clearRect(x, y, width, height);
+
+    ctx.strokeStyle = '#007bff';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.strokeRect(x, y, width, height);
+    ctx.setLineDash([]);
+
+    frameRequested.current = false;
+  }
+
   function draw() {
     const pp = pendingPoints.current;
-    const l = pp.length;
-    for (let i = 0; i < l; i++) {
-      ctxRef.current!.lineTo(pp[i].x, pp[i].y);
+    if (pp.length === 0) return;
+    pointsRef.current.push(...pp);
+
+    const alpha = (savedLastSettings.draw as DrawToolType).alpha;
+    const ctx = alpha === 1 ? ctxRef.current! : bufferCtx.current!;
+
+    if (alpha === 1) {
+      for (let i = 0; i < pp.length; i++) {
+        ctx.lineTo(pp[i].x, pp[i].y);
+      }
+      ctx.stroke();
+    } else {
+      ctx.clearRect(0, 0, overlayRef.current!.width, overlayRef.current!.height);
+      ctx.beginPath();
+      const points = pointsRef.current;
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 0; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      ctx.stroke();
     }
-    ctxRef.current!.stroke();
+
     frameRequested.current = false;
     pendingPoints.current = [];
-
-    (toolArgs!.points as Point[]).push(...pp);
   }
 
   const renderContent = () => {
@@ -148,36 +372,41 @@ const Main = () => {
       <>
         <canvas
           ref={canvasRef}
+          className="canvas-layer"
+          style={{
+            display: originalImage ? 'block' : 'none',
+          }}
+        />
+        <canvas
+          ref={overlayRef}
+          className="canvas-layer"
           onPointerDown={handleMouseDown}
           onPointerMove={handleMouseMove}
           onPointerUp={handleMouseUp}
+          onPointerLeave={handleMouseUp}
           style={{
-            maxWidth: '100%',
-            maxHeight: '100%',
-            objectFit: 'contain',
-            display: originalImage ? 'block' : 'none',
-            cursor: isDrawToolActive ? 'crosshair' : 'default',
-            touchAction: isDrawToolActive ? 'none' : 'auto',
+            display: isDrawToolActive || isCropToolActive ? 'block' : 'none',
+            cursor: 'crosshair',
           }}
         />
-        {!originalImage && (
-          <button className="btn btn-primary btn-lg" onClick={openLoadImageDialog}>
-            Open File
-          </button>
-        )}
       </>
     );
   };
 
   return (
     <main
-      className={`main-content p-3 d-flex align-items-center justify-content-center ${isDragging ? 'bg-light border border-primary' : ''}`}
+      className={`main-content ${isDragging ? 'bg-light border border-primary' : ''} ${originalImage ? '' : 'button-center'}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      style={{ transition: 'background-color 0.2s, border 0.2s' }}
+      style={{ position: 'relative' }}
     >
       {renderContent()}
+      {!originalImage && (
+        <button className="btn btn-primary btn-lg" onClick={openLoadImageDialog}>
+          Open File
+        </button>
+      )}
     </main>
   );
 };

@@ -2,6 +2,7 @@ import { blur } from './blur';
 import { colors } from './colors';
 import { levels } from './levels';
 import { transform } from './transform';
+import { crop } from './crop';
 import { draw } from './draw';
 import type { ToolArgs } from '../contexts/ImageContext.tsx';
 import { defaultSettings } from './settings.ts';
@@ -9,12 +10,14 @@ import Colors from '../components/ToolbarsRight/Colors/Colors.tsx';
 import Blur from '../components/ToolbarsRight/Blur/Blur.tsx';
 import Levels from '../components/ToolbarsRight/Levels/Levels.tsx';
 import Transform from '../components/ToolbarsRight/Transform/Transform.tsx';
+import Crop from '../components/ToolbarsRight/Crop/Crop.tsx';
 import Draw from '../components/ToolbarsRight/Draw/Draw.tsx';
 import type { ToolbarRightComponent } from '../components/ToolbarsRight/types.ts';
 
 type ToolsMap = Record<
   string,
   {
+    saveLastSettings?: boolean;
     icon: string;
     imageProcessor: (canvas: HTMLCanvasElement, snapshot: ImageBitmap) => (args: ToolArgs) => Promise<ImageBitmap>;
     defaultSettings: ToolArgs;
@@ -51,8 +54,15 @@ export const toolsMap: ToolsMap = {
     defaultSettings: defaultSettings.transform,
     toolboxComponent: Transform,
   },
+  crop: {
+    icon: 'crop',
+    // @ts-expect-error args
+    imageProcessor: crop,
+    defaultSettings: defaultSettings.crop,
+    toolboxComponent: Crop,
+  },
   draw: {
-    ignoreUpdate: true,
+    saveLastSettings: true,
     icon: 'draw',
     // @ts-expect-error args
     imageProcessor: draw,

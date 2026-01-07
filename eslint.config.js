@@ -6,10 +6,12 @@ import reactCompiler from 'eslint-plugin-react-compiler';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-plugin-prettier';
 import eslintConfigPrettier from 'eslint-config-prettier';
-import { defineConfig, globalIgnores } from 'eslint/config';
+import { defineConfig } from 'eslint/config';
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  {
+    ignores: ['dist', 'public', 'src/assets', 'node_modules', '*.tsbuildinfo', '.DS_Store'],
+  },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

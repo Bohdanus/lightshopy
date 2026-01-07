@@ -24,12 +24,21 @@ interface ImageContextType {
 
   toolName: ToolName | null | undefined;
   toolArgs: ToolArgs | undefined;
+  setToolArgs: (args: ToolArgs) => void;
   startEmptyTool: (tool: ToolName) => void;
+  addCanvasToHistory: (toolName: ToolName, args: ToolArgs) => void;
   updateLastHistoryItem: (args: ToolArgs, forceNewEntry?: boolean) => void;
   undo: () => void;
   redo: () => void;
   canUndo: () => boolean;
   canRedo: () => boolean;
+
+  zoom: number;
+  setZoom: (zoom: number) => void;
+
+  interactionMode: 'pan' | 'draw' | 'crop';
+  setInteractionMode: (mode: 'pan' | 'draw' | 'crop') => void;
+  cancelTool: () => void;
 }
 
 export const ImageContext = createContext<ImageContextType>({
@@ -44,10 +53,19 @@ export const ImageContext = createContext<ImageContextType>({
 
   toolName: null,
   toolArgs: {},
+  setToolArgs: () => {},
   startEmptyTool: () => {},
+  addCanvasToHistory: () => {},
   updateLastHistoryItem: () => {},
   undo: () => {},
   redo: () => {},
   canUndo: () => false,
   canRedo: () => false,
+
+  zoom: 1,
+  setZoom: () => {},
+
+  interactionMode: 'pan',
+  setInteractionMode: () => {},
+  cancelTool: () => {},
 });

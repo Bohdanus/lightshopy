@@ -1,0 +1,10 @@
+.zoom-toolbar {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0;
+
+  .zoom-slider {
+    width: 100%;
+    margin: 10px 0;
+  }
+}
