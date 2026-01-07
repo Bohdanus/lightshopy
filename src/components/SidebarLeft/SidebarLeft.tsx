@@ -2,10 +2,9 @@ import { useContext } from 'react';
 
 import './Sidebar.scss';
 import { ImageContext } from '../../contexts/ImageContext.tsx';
-import Zoom from '../Zoom/Zoom.tsx';
 
 const SidebarLeft = () => {
-  const { originalImage, startEmptyTool, interactionMode, setInteractionMode } = useContext(ImageContext);
+  const { originalImage, startEmptyTool } = useContext(ImageContext);
 
   const handleColors = () => {
     startEmptyTool('colors');

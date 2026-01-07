@@ -20,11 +20,8 @@ const Main = () => {
     toolName,
     addCanvasToHistory,
     openLoadImageDialog,
-    zoom,
-    setZoom,
     interactionMode,
     toolArgs,
-    updateLastHistoryItem,
     setToolArgs,
   } = useContext(ImageContext);
 

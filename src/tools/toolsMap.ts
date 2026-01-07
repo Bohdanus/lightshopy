@@ -59,6 +59,7 @@ export const toolsMap: ToolsMap = {
     // @ts-expect-error args
     imageProcessor: crop,
     defaultSettings: defaultSettings.crop,
+    // @ts-expect-error args
     toolboxComponent: Crop,
   },
   draw: {
