@@ -16,7 +16,7 @@
     "@popperjs/core": "^2.11.8",
     "@types/lodash-es": "^4.17.12",
     "bootstrap": "^5.3.8",
-    "lodash-es": "^4.17.22",
+    "lodash-es": "^4.17.23",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
